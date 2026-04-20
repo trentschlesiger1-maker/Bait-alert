@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { RISK_REGIONS, LOW_RISK_ZONES, SYMPTOM_STEPS, FIRST_AID } from "./data/riskData.js";
+import { RISK_REGIONS, LOW_RISK_ZONES, FIRST_AID } from "./data/riskData.js";
 import { CAMPSITE_RATINGS } from "./data/campsiteData.js";
 import { SNAKE_REGIONS, SNAKE_SPECIES } from "./data/snakeData.js";
 import { HAZARDS } from "./data/hazardData.js";
@@ -19,6 +19,97 @@ const SNAKE_FIRST_AID = [
   { icon: "5", title: "Watch for these symptoms", body: "Sudden weakness or collapse, then apparent recovery (false recovery is common). Vomiting, trembling, dilated pupils, loss of bladder control, paralysis, blood in urine." },
   { icon: "6", title: "Antivenom is the only treatment", body: "Only antivenom administered by a vet can neutralise the venom. Most dogs survive with prompt treatment. The further from a vet you are, the faster you need to move." },
   { icon: "7", title: "After treatment", body: "Dogs need 24-48 hours monitoring after antivenom. Restrict exercise for several days. Follow up with your vet the next day even if your dog seems recovered." },
+];
+
+
+const SYMPTOM_STEPS_1080 = [
+  {
+    q: "Is your dog showing any of these RIGHT NOW?",
+    opts: ["Seizures or convulsions", "Collapsed or unresponsive", "Cannot stand or severe trembling", "Vomiting repeatedly", "None of these yet"],
+    emergency: [0,1,2,3],
+    urgent: [3],
+    next: [99,99,99,1,1]
+  },
+  {
+    q: "How long ago did your dog possibly eat something or enter a baited area?",
+    opts: ["Less than 30 minutes ago", "30 minutes to 2 hours ago", "2 to 6 hours ago", "More than 6 hours ago", "Not sure"],
+    emergency: [],
+    urgent: [0,1,2],
+    next: [2,2,2,2,2]
+  },
+  {
+    q: "What did your dog eat or come into contact with?",
+    opts: ["Found a meat bait or sausage on ground", "Ate a dead or dying animal (carcass)", "Chewed or licked something unknown", "Was in baited area off lead", "Not sure what they ate"],
+    emergency: [],
+    urgent: [0,1],
+    next: [3,3,3,3,3]
+  },
+  {
+    q: "How big is your dog?",
+    opts: ["Small — under 10kg (e.g. Maltese, Chihuahua)", "Medium — 10-25kg (e.g. Kelpie, Staffy)", "Large — 25-40kg (e.g. Labrador, Shepherd)", "Very large — over 40kg (e.g. Mastiff, Great Dane)"],
+    emergency: [],
+    urgent: [0,1],
+    next: [4,4,4,4]
+  },
+  {
+    q: "Is your dog showing ANY of these early signs?",
+    opts: ["Restless or anxious behaviour", "Drooling or foaming at mouth", "Wobbly or uncoordinated walking", "Whining or crying", "Seems completely normal so far"],
+    emergency: [],
+    urgent: [0,1,2,3],
+    next: [99,99,99,99,5]
+  },
+  {
+    q: "How far are you from the nearest vet?",
+    opts: ["Less than 30 minutes away", "30 minutes to 1 hour away", "1 to 2 hours away", "More than 2 hours away — very remote"],
+    emergency: [],
+    urgent: [2,3],
+    next: [99,99,99,99]
+  }
+];
+
+const SYMPTOM_STEPS_SNAKE = [
+  {
+    q: "Is your dog showing any of these RIGHT NOW?",
+    opts: ["Collapsed or paralysed", "Cannot breathe properly", "Seizures or severe trembling", "Vomiting and wobbly", "None of these yet"],
+    emergency: [0,1,2,3],
+    urgent: [],
+    next: [99,99,99,99,1]
+  },
+  {
+    q: "Did you see or suspect a snake bite?",
+    opts: ["Yes — I saw the snake bite my dog", "Yes — I found my dog near a snake", "Not sure — dog was in long grass or bush", "Dog suddenly became unwell outdoors"],
+    emergency: [],
+    urgent: [0,1],
+    next: [2,2,2,2]
+  },
+  {
+    q: "How long ago did this happen?",
+    opts: ["Less than 30 minutes ago", "30 minutes to 1 hour ago", "1 to 3 hours ago", "More than 3 hours ago"],
+    emergency: [],
+    urgent: [0,1,2,3],
+    next: [3,3,3,3]
+  },
+  {
+    q: "What state are you in? (affects likely snake species)",
+    opts: ["QLD or NSW — possible Eastern Brown or Taipan", "VIC or TAS — possible Tiger Snake or Copperhead", "WA — possible Dugite or King Brown", "NT or SA — possible King Brown or Desert species"],
+    emergency: [],
+    urgent: [0,2,3],
+    next: [4,4,4,4]
+  },
+  {
+    q: "Is your dog showing any of these warning signs?",
+    opts: ["Sudden weakness then seems to recover (false recovery)", "Dilated or glazed eyes", "Drooling or vomiting", "Shaking or trembling", "Seems completely normal so far"],
+    emergency: [],
+    urgent: [0,1,2,3],
+    next: [99,99,99,99,5]
+  },
+  {
+    q: "How far are you from the nearest vet?",
+    opts: ["Under 30 minutes away", "30 mins to 1 hour away", "1 to 2 hours away", "More than 2 hours — very remote"],
+    emergency: [],
+    urgent: [2,3],
+    next: [99,99,99,99]
+  }
 ];
 
 const BAIT_REPORTS_KEY = "baitReports";
@@ -537,6 +628,14 @@ export default function App() {
               <Btn primary onClick={function() { setScreen("disclaimer"); }}>📍 Check My Location Risk</Btn>
               <Btn onClick={function() { setScreen("route"); }}>🗺️ Check Route Risk</Btn>
               <Btn onClick={function() { setScreen("campsites"); }}>🏕️ Campsite Safety Ratings</Btn>
+              <button onClick={function() { setScreen("hazards"); }} style={{ width: "100%", background: "#fff8e1", border: "1.5px solid #ffe082", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 24 }}>⚠️</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: "800", color: "#7a3800" }}>Beach &amp; Water Hazards</div>
+                  <div style={{ fontSize: 12, color: "#a0522d" }}>Sea hares · Blue-green algae · Cane toads</div>
+                </div>
+                <span style={{ marginLeft: "auto", color: "#a0522d", fontSize: 18 }}>›</span>
+              </button>
               {!petProfile && <Btn onClick={function() { setPetForm({ name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" }); setScreen("petprofile"); }}>🐶 Add Pet Profile</Btn>}
             </div>
 
@@ -718,29 +817,75 @@ export default function App() {
         )}
 
         {/* SYMPTOM CHECKER */}
-        {screen === "symptom" && (
-          <div className="fu" style={{ padding: "24px 20px 48px" }}>
-            <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ fontSize: 22, fontWeight: "900", color: accent }}>🚨 Symptom Checker</div>
+        {screen === "symptom" && (function() {
+          var steps = symptomType === "snake" ? SYMPTOM_STEPS_SNAKE : SYMPTOM_STEPS_1080;
+          var isEmergencyState = symptomStep === 99;
+          var currentStep = isEmergencyState ? null : (steps[symptomStep] || null);
+          var isComplete = !isEmergencyState && symptomStep >= steps.length;
+          return (
+          <div className="fu" style={{ padding: "20px 16px 48px" }}>
+            <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🚨 Symptom <span style={{ color: accent }}>Checker</span></div>
+
+              {/* Type selector */}
+              {symptomStep === 0 && !isEmergencyState && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={function() { setSymptomType("1080"); setSymptomStep(0); setSymptomAnswers([]); }}
+                    style={{ flex: 1, padding: "10px", borderRadius: 10, border: "2px solid " + (symptomType === "1080" ? accent : border), background: symptomType === "1080" ? accent + "15" : bgCard, color: symptomType === "1080" ? accent : textSub, fontWeight: "700", fontSize: 13, cursor: "pointer", fontFamily: "system-ui" }}>
+                    ☠️ 1080 Bait
+                  </button>
+                  <button onClick={function() { setSymptomType("snake"); setSymptomStep(0); setSymptomAnswers([]); }}
+                    style={{ flex: 1, padding: "10px", borderRadius: 10, border: "2px solid " + (symptomType === "snake" ? accent : border), background: symptomType === "snake" ? accent + "15" : bgCard, color: symptomType === "snake" ? accent : textSub, fontWeight: "700", fontSize: 13, cursor: "pointer", fontFamily: "system-ui" }}>
+                    🐍 Snake Bite
+                  </button>
+                </div>
+              )}
+
+              {/* Emergency banner always visible */}
               <div style={{ ...card, background: "#fdecea", border: "1px solid #f5b7b1" }}>
-                <div style={{ fontSize: 14, color: "#922b21", lineHeight: 1.7 }}>If your dog is having seizures or is unresponsive — stop and call <strong>1300 869 738</strong> or drive to a vet immediately. Do not wait.</div>
-                <a href="tel:1300869738" style={{ display: "block", marginTop: 10, background: accent, color: "#fff", textAlign: "center", padding: "12px", borderRadius: 10, fontWeight: "700", fontSize: 15, textDecoration: "none" }}>Call 1300 869 738 Now</a>
+                <div style={{ fontSize: 13, color: "#922b21", fontWeight: "700", marginBottom: 8 }}>⚠️ Seizures or unconscious? Don't wait.</div>
+                <a href="tel:1300869738" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#c0392b", color: "white", padding: "10px 14px", borderRadius: 10, textDecoration: "none" }}>
+                  <div style={{ fontSize: 13, fontWeight: "800" }}>Animal Poisons Helpline</div>
+                  <div style={{ fontSize: 14, fontWeight: "900" }}>1300 869 738</div>
+                </a>
               </div>
 
-              {symptomStep < SYMPTOM_STEPS.length - 1 && (
+              {/* Progress bar */}
+              {!isEmergencyState && !isComplete && (
+                <div style={{ display: "flex", gap: 4 }}>
+                  {steps.map(function(_, i) {
+                    return <div key={i} style={{ flex: 1, height: 4, borderRadius: 4, background: i < symptomStep ? accent : border }} />;
+                  })}
+                </div>
+              )}
+
+              {/* Current question */}
+              {currentStep && !isEmergencyState && (
                 <div style={card}>
-                  <div style={{ fontSize: 15, fontWeight: "700", color: textMain, marginBottom: 14, lineHeight: 1.5 }}>
-                    Step {symptomStep + 1}: {SYMPTOM_STEPS[symptomStep].q}
+                  <div style={{ fontSize: 11, color: textLight, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                    Question {symptomStep + 1} of {steps.length} — {symptomType === "snake" ? "Snake Bite" : "1080 Bait"}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: "800", color: textMain, marginBottom: 14, lineHeight: 1.5 }}>
+                    {currentStep.q}
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {SYMPTOM_STEPS[symptomStep].opts.map(function(opt, i) {
-                      var isEmergency = SYMPTOM_STEPS[symptomStep].emergency.includes(i);
+                    {currentStep.opts.map(function(opt, i) {
+                      var isEmerg = currentStep.emergency && currentStep.emergency.includes(i);
+                      var isUrgent = currentStep.urgent && currentStep.urgent.includes(i);
                       return (
                         <button key={i} onClick={function() {
                           setSymptomAnswers(function(prev) { return [...prev, opt]; });
-                          setSymptomStep(SYMPTOM_STEPS[symptomStep].next[i]);
-                        }} style={{ background: isEmergency ? "#fdecea" : bgCard, border: "1.5px solid " + (isEmergency ? "#f5b7b1" : border), borderRadius: 10, padding: "12px 14px", fontSize: 14, color: isEmergency ? "#922b21" : textMain, cursor: "pointer", textAlign: "left", fontFamily: "system-ui", fontWeight: isEmergency ? "600" : "400" }}>
-                          {isEmergency ? "⚠️ " : ""}{opt}
+                          var nextStep = currentStep.next[i];
+                          setSymptomStep(nextStep);
+                        }} style={{
+                          background: isEmerg ? "#fdecea" : isUrgent ? "#fff8e1" : bgCard,
+                          border: "1.5px solid " + (isEmerg ? "#f5b7b1" : isUrgent ? "#ffe082" : border),
+                          borderRadius: 10, padding: "12px 14px", fontSize: 14,
+                          color: isEmerg ? "#922b21" : isUrgent ? "#7a3800" : textMain,
+                          cursor: "pointer", textAlign: "left", fontFamily: "system-ui",
+                          fontWeight: isEmerg || isUrgent ? "600" : "400"
+                        }}>
+                          {isEmerg ? "🚨 " : isUrgent ? "⚠️ " : ""}{opt}
                         </button>
                       );
                     })}
@@ -748,25 +893,85 @@ export default function App() {
                 </div>
               )}
 
-              {symptomStep >= SYMPTOM_STEPS.length - 1 && (
-                <div style={card}>
-                  <div style={{ fontSize: 15, fontWeight: "700", color: textMain, marginBottom: 12 }}>Based on your answers:</div>
-                  <div style={{ background: "#fdecea", borderRadius: 10, padding: 14, marginBottom: 12 }}>
-                    <div style={{ fontSize: 14, color: "#922b21", lineHeight: 1.8, fontWeight: "600" }}>This is a medical emergency. Get to a vet immediately.</div>
+              {/* Emergency result */}
+              {isEmergencyState && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ ...card, background: "#fdecea", border: "2px solid #c0392b" }}>
+                    <div style={{ fontSize: 16, fontWeight: "900", color: "#c0392b", marginBottom: 8 }}>🚨 EMERGENCY — Act Now</div>
+                    <div style={{ fontSize: 14, color: "#7b241c", lineHeight: 1.8 }}>
+                      Based on your answers your dog needs immediate veterinary treatment.<br /><br />
+                      {symptomType === "snake" ? "There is NO antidote for most snake venoms — only antivenom from a vet can help. Every minute matters." : "There is NO antidote for 1080 poison. Early vet treatment is the only chance of survival."}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 14, color: textSub, lineHeight: 1.8, marginBottom: 14 }}>
-                    1. Call Animal Poisons Helpline: <strong>1300 869 738</strong><br />
-                    2. Drive to the nearest vet — do not wait<br />
-                    3. Keep your dog calm and still<br />
-                    4. Read the offline first aid guide below while travelling
+                  <a href="tel:1300869738" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#c0392b", color: "white", padding: "14px 16px", borderRadius: 10, textDecoration: "none" }}>
+                    <div><div style={{ fontSize: 14, fontWeight: "800" }}>Animal Poisons Helpline</div><div style={{ fontSize: 11, opacity: 0.85 }}>Free 24/7 — Call first</div></div>
+                    <div style={{ fontSize: 15, fontWeight: "900" }}>1300 869 738</div>
+                  </a>
+                  {vets && vets[0] && (
+                    <a href={"tel:" + (vets[0].phone || "")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: accent, color: "white", padding: "14px 16px", borderRadius: 10, textDecoration: "none" }}>
+                      <div><div style={{ fontSize: 14, fontWeight: "800" }}>{vets[0].name || "Nearest Vet"}</div><div style={{ fontSize: 11, opacity: 0.85 }}>{vets[0].vicinity || "Tap to call"}</div></div>
+                      <div style={{ fontSize: 14, fontWeight: "900" }}>📞 Call</div>
+                    </a>
+                  )}
+                  {petProfile && petProfile.vetPhone && (
+                    <a href={"tel:" + petProfile.vetPhone} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#5d4e0a", color: "white", padding: "14px 16px", borderRadius: 10, textDecoration: "none" }}>
+                      <div><div style={{ fontSize: 14, fontWeight: "800" }}>Your Home Vet — {petProfile.vet || "Saved Vet"}</div><div style={{ fontSize: 11, opacity: 0.85 }}>{petProfile.vetPhone}</div></div>
+                      <div style={{ fontSize: 14, fontWeight: "900" }}>📞 Call</div>
+                    </a>
+                  )}
+                  <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
+                    <div style={{ fontSize: 12, fontWeight: "800", color: "#e65100", marginBottom: 8 }}>While you drive to the vet:</div>
+                    {(symptomType === "snake" ? [
+                      "Carry your dog — do not let them walk, movement spreads venom faster",
+                      "Keep them as calm and still as possible",
+                      "Do NOT apply a tourniquet or cut the bite",
+                      "Note the time of the bite if known",
+                      "If you saw the snake, describe it to the vet — colour, pattern, size"
+                    ] : [
+                      "Keep your dog as calm and still as possible",
+                      "Do NOT induce vomiting unless told to by the helpline",
+                      "If you have the bait packaging or a photo, bring it",
+                      "Collect a sample of vomit if safe to do so — helps identify the toxin",
+                      "Note the time you think they ate the bait"
+                    ]).map(function(tip, i) {
+                      return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                        <div style={{ width: 18, height: 18, background: "#e65100", borderRadius: "50%", color: "white", fontSize: 10, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{i+1}</div>
+                        <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.5 }}>{tip}</div>
+                      </div>;
+                    })}
                   </div>
-                  <Btn primary onClick={function() { setScreen("firstaid"); }}>📋 View First Aid Guide</Btn>
-                  <Btn mt={8} onClick={function() { setSymptomStep(0); setSymptomAnswers([]); }}>Start Again</Btn>
+                  <Btn onClick={function() { setSymptomStep(0); setSymptomAnswers([]); }}>Start Again</Btn>
                 </div>
               )}
+
+              {/* Complete — monitor at home */}
+              {isComplete && !isEmergencyState && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent }}>
+                    <div style={{ fontSize: 15, fontWeight: "800", color: accent, marginBottom: 8 }}>✓ Monitor Closely</div>
+                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.8 }}>
+                      Your dog is not showing emergency symptoms right now. However symptoms from 1080 or snake venom can be delayed by up to 6 hours.<br /><br />
+                      <strong>Watch closely for the next 6 hours.</strong> If anything changes — go to a vet immediately.
+                    </div>
+                  </div>
+                  <div style={card}>
+                    <div style={{ fontSize: 12, fontWeight: "800", color: textMain, marginBottom: 8 }}>Warning signs to watch for:</div>
+                    {["Sudden trembling or muscle twitching", "Vomiting or excessive drooling", "Weakness or wobbly walking", "Dilated eyes or glazed look", "Collapse or loss of consciousness"].map(function(s, i) {
+                      return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e67e22", marginTop: 5, flexShrink: 0 }} />
+                        <div style={{ fontSize: 13, color: textSub }}>{s}</div>
+                      </div>;
+                    })}
+                  </div>
+                  <Btn primary onClick={function() { setScreen("firstaid"); }}>📋 View First Aid Guide</Btn>
+                  <Btn onClick={function() { setSymptomStep(0); setSymptomAnswers([]); }}>Start Again</Btn>
+                </div>
+              )}
+
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* FIRST AID */}
         {screen === "firstaid" && (
@@ -791,6 +996,15 @@ export default function App() {
                     <div style={{ fontSize: 13, fontWeight: "900" }}>📞 Call</div>
                   </a>
                 )}
+                {petProfile && petProfile.vetPhone && (
+                  <a href={"tel:" + petProfile.vetPhone} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#5d4e0a", color: "white", padding: "11px 14px", borderRadius: 10, textDecoration: "none", marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: "800" }}>Your Vet — {petProfile.vet || "Home Vet"}</div>
+                      <div style={{ fontSize: 11, opacity: 0.85 }}>{petProfile.vetPhone}</div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: "900" }}>📞 Call</div>
+                  </a>
+                )}
                 <a href="https://www.greencrossvets.com.au/webvet/" target="_blank" rel="noreferrer"
                   style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#00796b", color: "white", padding: "11px 14px", borderRadius: 10, textDecoration: "none" }}>
                   <div>
@@ -800,6 +1014,18 @@ export default function App() {
                   <div style={{ fontSize: 13, fontWeight: "900" }}>🎥 Open</div>
                 </a>
               </div>
+              {petProfile && (
+                <div style={{ ...card, display: "flex", gap: 12, alignItems: "center", background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+                  {petProfile.photo && <img src={petProfile.photo} alt={petProfile.name} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                  {!petProfile.photo && <div style={{ width: 44, height: 44, borderRadius: "50%", background: accent + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🐶</div>}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>{petProfile.name}</div>
+                    <div style={{ fontSize: 12, color: textLight }}>{petProfile.breed}{petProfile.weight ? " · " + petProfile.weight + "kg" : ""}</div>
+                    {petProfile.microchip && <div style={{ fontSize: 10, color: textLight, fontFamily: "monospace" }}>Chip: {petProfile.microchip}</div>}
+                    {petProfile.medicalNotes && <div style={{ fontSize: 11, color: "#e65100", marginTop: 2 }}>⚠️ {petProfile.medicalNotes}</div>}
+                  </div>
+                </div>
+              )}
               {FIRST_AID.map(function(item, i) {
                 return (
                   <div key={i} style={card}>
@@ -1509,8 +1735,132 @@ export default function App() {
         </div>
       )}
 
+      {/* PRO UPGRADE SCREEN */}
+      {screen === "upgrade" && (
+        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>⭐ Safe Pets <span style={{ color: accent }}>Pro</span></div>
+            <div style={{ ...card, background: "linear-gradient(135deg, " + accent + "15, " + accent + "05)", border: "2px solid " + accent }}>
+              <div style={{ fontSize: 16, fontWeight: "900", color: accent, marginBottom: 4 }}>Upgrade to Pro</div>
+              <div style={{ fontSize: 13, color: textSub, marginBottom: 16, lineHeight: 1.6 }}>For serious travellers and grey nomads who want full safety coverage for every trip.</div>
+              <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+                <button onClick={function() {
+                  setIsPro(true);
+                  try { localStorage.setItem("isPro", "true"); } catch {}
+                  setScreen("home");
+                  alert("Welcome to Pro! All features unlocked.");
+                }} style={{ flex: 1, background: accent, color: "white", border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: "800", cursor: "pointer" }}>
+                  $2.99 / month
+                </button>
+                <button onClick={function() {
+                  setIsPro(true);
+                  try { localStorage.setItem("isPro", "true"); } catch {}
+                  setScreen("home");
+                  alert("Welcome to Pro! All features unlocked.");
+                }} style={{ flex: 1, background: "#0d1117", color: "white", border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: "800", cursor: "pointer" }}>
+                  $19.99 / year
+                </button>
+              </div>
+              <div style={{ fontSize: 10, color: textLight, textAlign: "center" }}>Best value — save 44% with annual plan</div>
+            </div>
+            <div style={card}>
+              <div style={{ fontSize: 13, fontWeight: "800", color: textMain, marginBottom: 10 }}>Pro includes everything in Free plus:</div>
+              {[
+                ["🔍", "AI Area Search", "Type any Australian location — get a full risk briefing, nearest vets, campsites and snake risk before you leave home"],
+                ["🏕️", "Full Campsite Database", "All 118+ campsite safety ratings with dog policies, nearest town and remoteness ratings"],
+                ["🗺️", "Offline Risk Maps", "Download risk zone maps for areas with no signal"],
+                ["🔔", "Risk Zone Alerts", "Push notifications when you enter HIGH or EXTREME risk areas"],
+                ["📄", "Trip Safety Report", "Export a PDF safety report for your trip"],
+                ["🌦️", "Seasonal Overlays", "See how the current season affects risk in your area"],
+              ].map(function(f, i) {
+                return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
+                  <div style={{ fontSize: 20, flexShrink: 0 }}>{f[0]}</div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: "700", color: textMain }}>{f[1]}</div>
+                    <div style={{ fontSize: 12, color: textLight, lineHeight: 1.5 }}>{f[2]}</div>
+                  </div>
+                </div>;
+              })}
+            </div>
+            <Btn onClick={function() { setScreen("home"); }}>← Maybe later</Btn>
+          </div>
+        </div>
+      )}
+
+      {/* AREA SEARCH SCREEN — Pro feature */}
+      {screen === "areasearch" && (
+        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🔍 Area <span style={{ color: accent }}>Search</span></div>
+            {!isPro ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ ...card, background: accent + "10", border: "2px solid " + accent, textAlign: "center", padding: 24 }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>⭐</div>
+                  <div style={{ fontSize: 17, fontWeight: "900", color: textMain, marginBottom: 8 }}>Pro Feature</div>
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7, marginBottom: 16 }}>
+                    Area Search lets you research any Australian location before you leave home. Get a full AI-generated safety briefing — 1080 risk rating, baiting programs, nearest vets, campsites and snake risk.
+                  </div>
+                  <Btn primary onClick={function() { setScreen("upgrade"); }}>Upgrade to Pro — from $2.99/mo</Btn>
+                </div>
+                <Btn onClick={function() { setScreen("home"); }}>← Back</Btn>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ ...card }}>
+                  <div style={{ fontSize: 13, color: textLight, marginBottom: 10, lineHeight: 1.6 }}>Type any Australian town, national park, station, or region to get a full safety briefing before your trip.</div>
+                  <input
+                    value={areaSearch}
+                    onChange={function(e) { setAreaSearch(e.target.value); }}
+                    placeholder="e.g. Karijini NP, Broken Hill, Gibb River Road..."
+                    style={{ width: "100%", padding: "12px", borderRadius: 10, border: "1.5px solid " + border, fontSize: 14, color: textMain, background: bg, outline: "none", marginBottom: 10 }}
+                  />
+                  <Btn primary onClick={function() {
+                    if (!areaSearch.trim()) return;
+                    setAreaLoading(true);
+                    setAreaResult(null);
+                    fetch("https://api.anthropic.com/v1/messages", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 1000,
+                        messages: [{
+                          role: "user",
+                          content: "You are Safe Pets Australia, a pet safety app for Australian dog owners. Give a safety briefing for travelling with a dog to: " + areaSearch + ". Include: (1) 1080 bait risk rating (LOW/MODERATE/HIGH/EXTREME) with explanation of what programs operate there, (2) best time of year to visit regarding bait risk, (3) snake risk level and species to watch for, (4) any other hazards (sea hares, blue-green algae, cane toads if relevant), (5) practical tips for keeping dogs safe there. Be specific, accurate and practical. Format with clear sections. Keep it concise but useful."
+                        }]
+                      })
+                    }).then(function(r) { return r.json(); }).then(function(d) {
+                      var text = d.content && d.content[0] && d.content[0].text;
+                      setAreaResult(text || "Unable to get results. Please try again.");
+                      setAreaLoading(false);
+                    }).catch(function() {
+                      setAreaResult("Unable to connect. Please check your connection and try again.");
+                      setAreaLoading(false);
+                    });
+                  }}>
+                    {areaLoading ? "Searching..." : "🔍 Get Safety Briefing"}
+                  </Btn>
+                </div>
+                {areaLoading && (
+                  <div style={{ ...card, textAlign: "center", padding: 24 }}>
+                    <div style={{ fontSize: 13, color: textLight }}>Generating safety briefing for {areaSearch}...</div>
+                  </div>
+                )}
+                {areaResult && !areaLoading && (
+                  <div style={card}>
+                    <div style={{ fontSize: 11, fontWeight: "800", color: accent, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Safety Briefing — {areaSearch}</div>
+                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.8, whiteSpace: "pre-wrap" }}>{areaResult}</div>
+                  </div>
+                )}
+                <Btn onClick={function() { setScreen("home"); }}>← Back</Btn>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* BOTTOM NAV — show on main screens */}
-      {["home","symptom","firstaid","saved","more","snakes","snakeid","snakefirstaid","report","hazards"].includes(screen) && <NavBar />}
+      {["home","symptom","firstaid","saved","more","snakes","snakeid","snakefirstaid","report","hazards","upgrade","areasearch"].includes(screen) && <NavBar />}
     </div>
   );
 }
