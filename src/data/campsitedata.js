@@ -65,3 +65,4 @@ export const CAMPSITE_RATINGS = [
   { name: "Ben Lomond NP", state: "TAS", region: "Northeast TAS", risk: "MODERATE", dog: "Dogs not permitted in NP", notes: "Northeast Tasmania agricultural area. 1080 used for possum/wallaby control on adjacent farmland — different target species to mainland states. Lower risk than mainland. Alpine ski area — seasonal access only. Dogs not permitted in NP." },
   { name: "Namadgi NP", state: "ACT", region: "ACT", risk: "MODERATE", dog: "Dogs allowed in some campgrounds", notes: "ACT parks have wild dog and fox control programs in alpine areas. Check with ACT Parks before camping with dogs." },
 ];
+ 
