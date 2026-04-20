@@ -544,7 +544,7 @@ export default function App() {
       { id: "home", label: "Home", icon: "🏠" },
       { id: "symptom", label: "Emergency", icon: "🚨" },
       { id: "snakes", label: "Snakes", icon: "🐍" },
-      { id: "saved", label: "Saved", icon: "📍" },
+      { id: "hazards", label: "Hazards", icon: "⚠️" },
       { id: "more", label: "More", icon: "☰" },
     ];
     return (
@@ -553,6 +553,7 @@ export default function App() {
           return (
             <button key={t.id} onClick={function() {
               if (t.id === "symptom") { setSymptomStep(0); setSymptomAnswers([]); }
+              if (t.id === "hazards") { setSelectedHazard(null); }
               setScreen(t.id);
             }} style={{ flex: 1, background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "4px 0" }}>
               <span style={{ fontSize: 18 }}>{t.icon}</span>
@@ -570,11 +571,13 @@ export default function App() {
 
       {/* HEADER */}
       <div style={{ padding: "14px 20px 12px", background: bgCard, borderBottom: "1px solid " + border, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", flexShrink: 0 }}>
-        <Logo />
-        <div>
-          <div style={{ fontSize: 15, fontWeight: "800", color: textMain, letterSpacing: "-0.02em" }}>Safe Pets <span style={{ color: accent }}>Australia</span></div>
-          <div style={{ fontSize: 10, color: textLight, letterSpacing: "0.08em", textTransform: "uppercase" }}>1080 Bait &amp; Snake Safety</div>
-        </div>
+        <button onClick={function() { setScreen("home"); }} style={{ display: "flex", alignItems: "center", gap: 12, background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+          <Logo />
+          <div style={{ textAlign: "left" }}>
+            <div style={{ fontSize: 15, fontWeight: "800", color: textMain, letterSpacing: "-0.02em" }}>Safe Pets <span style={{ color: accent }}>Australia</span></div>
+            <div style={{ fontSize: 10, color: textLight, letterSpacing: "0.08em", textTransform: "uppercase" }}>1080 Bait &amp; Snake Safety</div>
+          </div>
+        </button>
         <div style={{ marginLeft: "auto" }}>
           <div style={{ fontSize: 10, padding: "3px 9px", borderRadius: 20, fontWeight: "600", background: isOnline ? "#e0f5f3" : "#fdecea", color: isOnline ? "#00968A" : "#c0392b", border: "1px solid " + (isOnline ? "#00B8A8" : "#f5b7b1") }}>
             {isOnline ? "ONLINE" : "OFFLINE"}
@@ -1631,109 +1634,179 @@ export default function App() {
 
       </div>
 
-      {/* HAZARDS SCREEN */}
+      {/* HAZARDS HUB */}
       {screen === "hazards" && (
         <div className="fu" style={{ padding: "20px 16px 48px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>⚠️ Beach & Water <span style={{ color: accent }}>Hazards</span></div>
-            <div style={{ fontSize: 13, color: textLight, lineHeight: 1.6 }}>These hazards kill Australian dogs every year. Tap each one to learn the signs, what to do, and how to stay safe.</div>
-
-            {!selectedHazard ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {HAZARDS.map(function(h) {
-                  return (
-                    <button key={h.id} onClick={function() { setSelectedHazard(h); }}
-                      style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid " + h.color }}>
-                      <div style={{ fontSize: 36 }}>{h.icon}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>{h.name}</div>
-                        <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>{h.where.split(".")[0]}</div>
-                        <div style={{ marginTop: 6 }}>
-                          <span style={{ fontSize: 10, fontWeight: "700", padding: "2px 8px", borderRadius: 10, background: h.color + "20", color: h.color, border: "1px solid " + h.color + "40" }}>{h.risk} RISK</span>
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 20, color: textLight }}>›</div>
-                    </button>
-                  );
-                })}
-                <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
-                  <div style={{ fontSize: 12, color: "#00796b", lineHeight: 1.7 }}>
-                    🚨 <strong>Animal Poisons Helpline</strong> — free 24/7 advice for any of these hazards.<br />
-                    <a href="tel:1300869738" style={{ color: accent, fontWeight: "700", fontSize: 15 }}>1300 869 738</a>
-                  </div>
-                </div>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>⚠️ Pet <span style={{ color: accent }}>Hazards</span></div>
+            <div style={{ fontSize: 13, color: textLight, lineHeight: 1.6 }}>These hazards kill Australian dogs every year. Tap each one to learn the signs, first aid and how to stay safe.</div>
+            <button onClick={function() { setScreen("canetoad"); }} style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid #e67e22" }}>
+              <div style={{ fontSize: 40 }}>🐸</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>Cane Toads</div>
+                <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>QLD, NT, northern NSW and WA</div>
+                <div style={{ marginTop: 6 }}><span style={{ fontSize: 10, fontWeight: "700", padding: "2px 8px", borderRadius: 10, background: "#e67e2220", color: "#e67e22", border: "1px solid #e67e2240" }}>HIGH RISK</span></div>
               </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <button onClick={function() { setSelectedHazard(null); }}
-                  style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
-
-                <div style={{ ...card, borderLeft: "4px solid " + selectedHazard.color, padding: 0, overflow: "hidden" }}>
-                  <div style={{ background: selectedHazard.color + "15", padding: "16px 16px 12px", borderBottom: "1px solid " + border }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ fontSize: 42 }}>{selectedHazard.icon}</div>
-                      <div>
-                        <div style={{ fontSize: 20, fontWeight: "900", color: textMain }}>{selectedHazard.name}</div>
-                        <span style={{ fontSize: 10, fontWeight: "700", padding: "2px 8px", borderRadius: 10, background: selectedHazard.color + "20", color: selectedHazard.color, border: "1px solid " + selectedHazard.color + "40" }}>{selectedHazard.risk} RISK TO DOGS</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 10, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Where Found</div>
-                      <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.where}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Peak Season</div>
-                      <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.season}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>What It Looks Like</div>
-                      <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.appearance}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Why It's Dangerous</div>
-                      <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.danger}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ ...card, borderLeft: "4px solid #e74c3c" }}>
-                  <div style={{ fontSize: 11, fontWeight: "800", color: "#e74c3c", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>⚠️ Symptoms to Watch For</div>
-                  {selectedHazard.symptoms.map(function(s, i) {
-                    return <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 5 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e74c3c", marginTop: 5, flexShrink: 0 }} />
-                      <div style={{ fontSize: 13, color: textSub, lineHeight: 1.5 }}>{s}</div>
-                    </div>;
-                  })}
-                </div>
-
-                <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
-                  <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 First Aid Steps</div>
-                  {selectedHazard.firstAid.map(function(s, i) {
-                    return <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 7 }}>
-                      <div style={{ width: 20, height: 20, borderRadius: "50%", background: "#e65100", color: "white", fontSize: 10, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{i + 1}</div>
-                      <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.6, flex: 1 }}>{s}</div>
-                    </div>;
-                  })}
-                </div>
-
-                <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
-                  <div style={{ fontSize: 11, fontWeight: "800", color: accent, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>💡 Prevention Tips</div>
-                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{selectedHazard.tips}</div>
-                </div>
-
-                <div style={{ ...card, background: "#fdecea", border: "1px solid #f5b7b1" }}>
-                  <div style={{ fontSize: 11, color: "#c0392b", fontWeight: "800", marginBottom: 4 }}>🚨 EMERGENCY</div>
-                  <div style={{ fontSize: 13, color: "#7b241c", marginBottom: 8, lineHeight: 1.6 }}>Animal Poisons Helpline — free 24/7</div>
-                  <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "12px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 1300 869 738</a>
-                </div>
-
+              <div style={{ fontSize: 20, color: textLight }}>›</div>
+            </button>
+            <button onClick={function() { setScreen("seaanimals"); }} style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid #8e44ad" }}>
+              <div style={{ fontSize: 40 }}>🐌</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>Sea Animals</div>
+                <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>Sea hares · Jellyfish · Coastal hazards</div>
+                <div style={{ marginTop: 6 }}><span style={{ fontSize: 10, fontWeight: "700", padding: "2px 8px", borderRadius: 10, background: "#8e44ad20", color: "#8e44ad", border: "1px solid #8e44ad40" }}>HIGH RISK</span></div>
               </div>
-            )}
+              <div style={{ fontSize: 20, color: textLight }}>›</div>
+            </button>
+            <button onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }} style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid #27ae60" }}>
+              <div style={{ fontSize: 40 }}>🟢</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>Blue-Green Algae</div>
+                <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>Freshwater lakes, rivers and dams</div>
+                <div style={{ marginTop: 6 }}><span style={{ fontSize: 10, fontWeight: "700", padding: "2px 8px", borderRadius: 10, background: "#c0392b20", color: "#c0392b", border: "1px solid #c0392b40" }}>EXTREME RISK</span></div>
+              </div>
+              <div style={{ fontSize: 20, color: textLight }}>›</div>
+            </button>
+            <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+              <div style={{ fontSize: 12, color: "#00796b", lineHeight: 1.7 }}>
+                🚨 <strong>Animal Poisons Helpline</strong> — free 24/7 for any hazard.<br />
+                <a href="tel:1300869738" style={{ color: accent, fontWeight: "700", fontSize: 15 }}>1300 869 738</a>
+              </div>
+            </div>
           </div>
         </div>
       )}
+
+      {/* CANE TOAD SCREEN */}
+      {screen === "canetoad" && (
+        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+            <button onClick={function() { setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🐸 Cane <span style={{ color: accent }}>Toads</span></div>
+            <div style={{ ...card, background: "#fff3e0", border: "1.5px solid #e67e22" }}>
+              <div style={{ fontSize: 13, fontWeight: "800", color: "#e65100", marginBottom: 4 }}>⚠️ HIGH RISK — Can kill a dog in 15 minutes</div>
+              <div style={{ fontSize: 12, color: "#7a3800", lineHeight: 1.6 }}>Found across QLD, NT, northern NSW and parts of WA. Most active at night and after rain.</div>
+            </div>
+            {[
+              { title: "Where Found", icon: "📍", body: "Queensland, Northern Territory, northern NSW and parts of northern WA. Common near water, gardens, compost heaps and outdoor lights at night. Expanding southward every year." },
+              { title: "What They Look Like", icon: "👁️", body: "Large warty brown toad, 10-23cm long. Distinctive large bulging shoulder glands (parotid glands) behind the eyes — these contain the poison. Much larger than native frogs. They sit rather than hop. Do not confuse with native frogs." },
+              { title: "Why They're Dangerous", icon: "☠️", body: "The parotid glands produce a milky white venom (bufotoxin) when the toad is bitten, licked or squeezed. Even brief mouth contact can cause rapid and severe poisoning. Dogs that pick up or mouth a cane toad can die within 15 minutes without treatment." },
+              { title: "Symptoms", icon: "🚨", body: "Excessive drooling and foaming at the mouth · Pawing at mouth · Bright red or inflamed gums · Head shaking · Vomiting · Disorientation and wobbling · Seizures and muscle spasms · Collapse and heart failure" },
+            ].map(function(s, i) {
+              return <div key={i} style={card}>
+                <div style={{ fontSize: 11, fontWeight: "800", color: accent, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>{s.icon} {s.title}</div>
+                <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{s.body}</div>
+              </div>;
+            })}
+            <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 First Aid Steps</div>
+              {["Wipe inside of mouth and gums firmly with a damp cloth — wipe outward not inward, removing as much toxin as possible", "Rinse mouth with water from a hose for 10 minutes if your dog will allow — aim water to flow OUT of the mouth not down the throat", "Call Animal Poisons Helpline 1300 869 738 immediately", "Drive to the nearest vet immediately — this is a genuine emergency, do not wait", "Keep your dog calm and as cool as possible during transport", "Do not let your dog eat or drink anything else"].map(function(s, i) {
+                return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#e65100", color: "white", fontSize: 11, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i+1}</div>
+                  <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.6 }}>{s}</div>
+                </div>;
+              })}
+            </div>
+            <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: accent, marginBottom: 6 }}>💡 Prevention Tips</div>
+              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>In QLD and NT keep dogs inside or supervised after dark. Check your yard before letting dogs out at night — use a torch. Never let dogs play with or mouth toads. Consider muzzling dogs at night in high cane toad areas. Remove anything from yard that attracts toads — pet food bowls, water, compost. Teach your dog "leave it" — can be lifesaving.</div>
+            </div>
+            <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "14px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 Emergency: 1300 869 738</a>
+          </div>
+        </div>
+      )}
+
+      {/* SEA ANIMALS SCREEN */}
+      {screen === "seaanimals" && (
+        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+            <button onClick={function() { setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🐌 Sea <span style={{ color: accent }}>Animals</span></div>
+            <div style={{ ...card, background: "#f3e5f5", border: "1.5px solid #8e44ad" }}>
+              <div style={{ fontSize: 13, fontWeight: "800", color: "#6a1b9a", marginBottom: 4 }}>⚠️ HIGH RISK — Sea hares can kill dogs rapidly</div>
+              <div style={{ fontSize: 12, color: "#4a148c", lineHeight: 1.6 }}>Sea hares wash up on Australian beaches in summer. Even a quick lick can cause severe poisoning. Keep dogs on lead near beaches.</div>
+            </div>
+            <div style={{ ...card, borderLeft: "4px solid #8e44ad" }}>
+              <div style={{ fontSize: 14, fontWeight: "900", color: textMain, marginBottom: 10 }}>🐌 Sea Hares</div>
+              {[
+                { title: "Where Found", body: "Coastal beaches Australia-wide. Most common in WA, NSW, VIC and SA coasts. Mass beaching events happen in summer when thousands wash ashore at once at the end of their breeding cycle." },
+                { title: "What They Look Like", body: "Large soft sea slug, 10-30cm long. Soft rounded body with ear-like tentacles on the head. Can be brown, grey, green or purple. Often have large wing-like flaps. Squirt pink or purple ink when threatened — this ink is also toxic." },
+                { title: "Why Dangerous", body: "Toxins are found in their skin, slime and ink which they absorb from algae they eat. Even a quick lick or brief contact can cause severe poisoning. There have been documented cases of dogs dying after just playing with a sea hare on the beach." },
+                { title: "Symptoms", body: "Excessive drooling and foaming · Vomiting · Muscle tremors and shaking · Seizures and convulsions · Loss of coordination · Collapse · Respiratory failure" },
+              ].map(function(s, i) {
+                return <div key={i} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: "800", color: "#8e44ad", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{s.title}</div>
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{s.body}</div>
+                </div>;
+              })}
+            </div>
+            <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 Sea Hare First Aid</div>
+              {["Remove your dog from the beach immediately", "Rinse mouth with fresh water if safe to do so", "Call Animal Poisons Helpline 1300 869 738 immediately", "Drive to nearest vet — do not wait for symptoms to appear", "Note the time of contact and describe the animal to the vet", "Do NOT induce vomiting unless specifically instructed by the vet or helpline"].map(function(s, i) {
+                return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 8 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#8e44ad", color: "white", fontSize: 11, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i+1}</div>
+                  <div style={{ fontSize: 13, color: "#4a148c", lineHeight: 1.6 }}>{s}</div>
+                </div>;
+              })}
+            </div>
+            <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: accent, marginBottom: 6 }}>💡 Prevention Tips</div>
+              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>Keep dogs on lead near beaches in summer. If you see a mass beaching event — thousands of slug-like creatures on the sand — leave immediately and keep dogs away. Report to Animal Poisons Helpline so they can alert other pet owners in the area. Check local council beach reports before visiting coastal areas in summer.</div>
+            </div>
+            <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "14px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 Emergency: 1300 869 738</a>
+          </div>
+        </div>
+      )}
+
+      {/* HAZARD DETAIL — Blue-Green Algae */}
+      {screen === "hazarddetail" && selectedHazard && (
+        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+            <button onClick={function() { setSelectedHazard(null); setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>{selectedHazard.icon} {selectedHazard.name}</div>
+            <div style={{ ...card, borderLeft: "4px solid " + selectedHazard.color }}>
+              <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Where Found</div>
+              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.where}</div>
+            </div>
+            <div style={card}>
+              <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Peak Season</div>
+              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.season}</div>
+            </div>
+            <div style={card}>
+              <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>What It Looks Like</div>
+              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.appearance}</div>
+            </div>
+            <div style={card}>
+              <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Why It Is Dangerous</div>
+              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.danger}</div>
+            </div>
+            <div style={{ ...card, borderLeft: "4px solid #e74c3c" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: "#e74c3c", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>⚠️ Symptoms</div>
+              {selectedHazard.symptoms.map(function(s, i) {
+                return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e74c3c", marginTop: 5, flexShrink: 0 }} />
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.5 }}>{s}</div>
+                </div>;
+              })}
+            </div>
+            <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 First Aid</div>
+              {selectedHazard.firstAid.map(function(s, i) {
+                return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 7 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#e65100", color: "white", fontSize: 11, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i+1}</div>
+                  <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.6 }}>{s}</div>
+                </div>;
+              })}
+            </div>
+            <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: accent, marginBottom: 6 }}>💡 Prevention</div>
+              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{selectedHazard.tips}</div>
+            </div>
+            <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "14px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 Emergency: 1300 869 738</a>
+          </div>
+        </div>
+      )}
+
 
       {/* PRO UPGRADE SCREEN */}
       {screen === "upgrade" && (
@@ -1860,7 +1933,7 @@ export default function App() {
       )}
 
       {/* BOTTOM NAV — show on main screens */}
-      {["home","symptom","firstaid","saved","more","snakes","snakeid","snakefirstaid","report","hazards","upgrade","areasearch"].includes(screen) && <NavBar />}
+      {["home","symptom","firstaid","saved","more","snakes","snakeid","snakefirstaid","report","hazards","upgrade","areasearch","canetoad","seaanimals"].includes(screen) && <NavBar />}
     </div>
   );
 }
