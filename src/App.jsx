@@ -256,6 +256,11 @@ export default function App() {
   const [petForm, setPetForm] = useState({ name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" });
   const [symptomStep, setSymptomStep] = useState(0);
   const [symptomAnswers, setSymptomAnswers] = useState([]);
+  const [symptomType, setSymptomType] = useState("1080");
+  const [isPro, setIsPro] = useState(function() { try { return localStorage.getItem("isPro") === "true"; } catch { return false; } });
+  const [areaSearch, setAreaSearch] = useState("");
+  const [areaResult, setAreaResult] = useState(null);
+  const [areaLoading, setAreaLoading] = useState(false);
   const [routeStart, setRouteStart] = useState("");
   const [campsiteSearch, setCampsiteSearch] = useState("");
   const [campsiteFilter, setCampsiteFilter] = useState("ALL");
