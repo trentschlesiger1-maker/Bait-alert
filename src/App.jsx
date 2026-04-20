@@ -549,7 +549,7 @@ export default function App() {
       { id: "home", label: "Home", icon: "🏠" },
       { id: "symptom", label: "Emergency", icon: "🚨" },
       { id: "snakes", label: "Snakes", icon: "🐍" },
-      { id: "hazards", label: "Hazards", icon: "⚠️" },
+      { id: "saved", label: "Saved", icon: "📍" },
       { id: "more", label: "More", icon: "☰" },
     ];
     return (
@@ -633,17 +633,38 @@ export default function App() {
             </div>
 
             <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 10 }}>
-              <Btn primary onClick={function() { setScreen("disclaimer"); }}>📍 Check My Location Risk</Btn>
+              <Btn primary onClick={function() { setScreen("disclaimer"); }}>📍 Check My 1080 Location Risk</Btn>
               <Btn onClick={function() { setScreen("route"); }}>🗺️ Check Route Risk</Btn>
               <Btn onClick={function() { setScreen("campsites"); }}>🏕️ Campsite Safety Ratings</Btn>
-              <button onClick={function() { setScreen("hazards"); }} style={{ width: "100%", background: "#fff8e1", border: "1.5px solid #ffe082", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 24 }}>⚠️</span>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: "800", color: "#7a3800" }}>Beach &amp; Water Hazards</div>
-                  <div style={{ fontSize: 12, color: "#a0522d" }}>Sea hares · Blue-green algae · Cane toads</div>
+
+              {/* Individual hazard cards */}
+              <button onClick={function() { setScreen("canetoad"); }} style={{ width: "100%", background: "#fff3e0", border: "1.5px solid #e67e22", borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 26 }}>🐸</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: "800", color: "#7a3800" }}>Cane Toads</div>
+                  <div style={{ fontSize: 11, color: "#a0522d" }}>QLD · NT · Northern NSW · WA</div>
                 </div>
-                <span style={{ marginLeft: "auto", color: "#a0522d", fontSize: 18 }}>›</span>
+                <span style={{ color: "#e67e22", fontSize: 16 }}>›</span>
               </button>
+
+              <button onClick={function() { setScreen("seaanimals"); }} style={{ width: "100%", background: "#f3e5f5", border: "1.5px solid #8e44ad", borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 26 }}>🐌</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: "800", color: "#4a148c" }}>Sea Animals</div>
+                  <div style={{ fontSize: 11, color: "#6a1b9a" }}>Sea hares · Coastal beach hazards</div>
+                </div>
+                <span style={{ color: "#8e44ad", fontSize: 16 }}>›</span>
+              </button>
+
+              <button onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }} style={{ width: "100%", background: "#e8f5e9", border: "1.5px solid #27ae60", borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 26 }}>🟢</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: "800", color: "#1b5e20" }}>Blue-Green Algae</div>
+                  <div style={{ fontSize: 11, color: "#2e7d32" }}>Freshwater lakes · Rivers · Dams</div>
+                </div>
+                <span style={{ color: "#27ae60", fontSize: 16 }}>›</span>
+              </button>
+
               {!petProfile && <Btn onClick={function() { setPetForm({ name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" }); setScreen("petprofile"); }}>🐶 Add Pet Profile</Btn>}
             </div>
 
