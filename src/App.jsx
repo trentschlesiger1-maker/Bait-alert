@@ -653,8 +653,7 @@ export default function App() {
               <Btn onClick={function() { setScreen("campsites"); }}>🏕️ Campsite Safety Ratings</Btn>
 
               {/* Individual hazard cards */}
-              <button onClick={function() { setScreen("canetoad"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 26 }}>🐸</span>
+              <button onClick={function() { setScreen("canetoad"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 10, padding: "13px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "system-ui, -apple-system, sans-serif" }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Cane Toads</div>
                   <div style={{ fontSize: 11, color: textLight }}>QLD · NT · Northern NSW · WA</div>
@@ -662,17 +661,15 @@ export default function App() {
                 <span style={{ color: textLight, fontSize: 16 }}>›</span>
               </button>
 
-              <button onClick={function() { setScreen("seaanimals"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 26 }}>🐌</span>
+              <button onClick={function() { setScreen("seaanimals"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 10, padding: "13px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "system-ui, -apple-system, sans-serif" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Sea Animals</div>
+                  <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Sea Hares</div>
                   <div style={{ fontSize: 11, color: textLight }}>Sea hares · Coastal beach hazards</div>
                 </div>
                 <span style={{ color: textLight, fontSize: 16 }}>›</span>
               </button>
 
-              <button onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
-                <span style={{ fontSize: 26 }}>🟢</span>
+              <button onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 10, padding: "13px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "system-ui, -apple-system, sans-serif" }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Blue-Green Algae</div>
                   <div style={{ fontSize: 11, color: textLight }}>Freshwater lakes · Rivers · Dams</div>
@@ -1679,10 +1676,9 @@ export default function App() {
       {screen === "hazards" && (
         <div className="fu" style={{ padding: "20px 16px 48px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>⚠️ Pet <span style={{ color: accent }}>Hazards</span></div>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>Pet <span style={{ color: accent }}>Hazards</span></div>
             <div style={{ fontSize: 13, color: textLight, lineHeight: 1.6 }}>These hazards kill Australian dogs every year. Tap each one to learn the signs, first aid and how to stay safe.</div>
             <button onClick={function() { setScreen("canetoad"); }} style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid #e67e22" }}>
-              <div style={{ fontSize: 40 }}>🐸</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>Cane Toads</div>
                 <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>QLD, NT, northern NSW and WA</div>
@@ -1693,14 +1689,13 @@ export default function App() {
             <button onClick={function() { setScreen("seaanimals"); }} style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid #8e44ad" }}>
               <div style={{ fontSize: 40 }}>🐌</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>Sea Animals</div>
-                <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>Sea hares · Jellyfish · Coastal hazards</div>
+                <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>Sea Hares</div>
+                <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>Coastal sea creatures · Beaches</div>
                 <div style={{ marginTop: 6 }}><span style={{ fontSize: 10, fontWeight: "700", padding: "2px 8px", borderRadius: 10, background: "#8e44ad20", color: "#8e44ad", border: "1px solid #8e44ad40" }}>HIGH RISK</span></div>
               </div>
               <div style={{ fontSize: 20, color: textLight }}>›</div>
             </button>
             <button onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }} style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid #27ae60" }}>
-              <div style={{ fontSize: 40 }}>🟢</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>Blue-Green Algae</div>
                 <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>Freshwater lakes, rivers and dams</div>
@@ -1723,7 +1718,7 @@ export default function App() {
         <div className="fu" style={{ padding: "20px 16px 48px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
             <button onClick={function() { setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
-            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🐸 Cane <span style={{ color: accent }}>Toads</span></div>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>Cane <span style={{ color: accent }}>Toads</span></div>
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Rhinella_marina_%28Marine_toad%29.jpg/320px-Rhinella_marina_%28Marine_toad%29.jpg"
               alt="Cane Toad"
@@ -1768,7 +1763,7 @@ export default function App() {
         <div className="fu" style={{ padding: "20px 16px 48px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
             <button onClick={function() { setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
-            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🐌 Sea <span style={{ color: accent }}>Animals</span></div>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>Sea <span style={{ color: accent }}>Hares</span></div>
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Aplysia_californica.jpg/320px-Aplysia_californica.jpg"
               alt="Sea Hare"
@@ -1780,7 +1775,7 @@ export default function App() {
               <div style={{ fontSize: 12, color: "#4a148c", lineHeight: 1.6 }}>Sea hares wash up on Australian beaches in summer. Even a quick lick can cause severe poisoning. Keep dogs on lead near beaches.</div>
             </div>
             <div style={{ ...card, borderLeft: "4px solid #8e44ad" }}>
-              <div style={{ fontSize: 14, fontWeight: "900", color: textMain, marginBottom: 10 }}>🐌 Sea Hares</div>
+              <div style={{ fontSize: 14, fontWeight: "900", color: textMain, marginBottom: 10 }}>Sea Hares</div>
               {[
                 { title: "Where Found", body: "Coastal beaches Australia-wide. Most common in WA, NSW, VIC and SA coasts. Mass beaching events happen in summer when thousands wash ashore at once at the end of their breeding cycle." },
                 { title: "What They Look Like", body: "Large soft sea slug, 10-30cm long. Soft rounded body with ear-like tentacles on the head. Can be brown, grey, green or purple. Often have large wing-like flaps. Squirt pink or purple ink when threatened — this ink is also toxic." },
@@ -2106,3 +2101,4 @@ export default function App() {
     </div>
   );
 }
+
