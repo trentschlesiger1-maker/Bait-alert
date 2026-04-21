@@ -649,35 +649,35 @@ export default function App() {
             <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 10 }}>
               <Btn primary onClick={function() { setScreen("disclaimer"); }}>📍 Check My 1080 Location Risk</Btn>
               <Btn onClick={function() { setScreen("route"); }}>🗺️ Check Route Risk</Btn>
-              <Btn onClick={function() { setScreen("map"); }}>📍 Live Bait Sign Map</Btn>
+              <Btn onClick={function() { setScreen("map"); }}>🗺️ Official Baiting Maps</Btn>
               <Btn onClick={function() { setScreen("campsites"); }}>🏕️ Campsite Safety Ratings</Btn>
 
               {/* Individual hazard cards */}
-              <button onClick={function() { setScreen("canetoad"); }} style={{ width: "100%", background: "#fff3e0", border: "1.5px solid #e67e22", borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
+              <button onClick={function() { setScreen("canetoad"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ fontSize: 26 }}>🐸</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: "800", color: "#7a3800" }}>Cane Toads</div>
-                  <div style={{ fontSize: 11, color: "#a0522d" }}>QLD · NT · Northern NSW · WA</div>
+                  <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Cane Toads</div>
+                  <div style={{ fontSize: 11, color: textLight }}>QLD · NT · Northern NSW · WA</div>
                 </div>
-                <span style={{ color: "#e67e22", fontSize: 16 }}>›</span>
+                <span style={{ color: textLight, fontSize: 16 }}>›</span>
               </button>
 
-              <button onClick={function() { setScreen("seaanimals"); }} style={{ width: "100%", background: "#f3e5f5", border: "1.5px solid #8e44ad", borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
+              <button onClick={function() { setScreen("seaanimals"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ fontSize: 26 }}>🐌</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: "800", color: "#4a148c" }}>Sea Animals</div>
-                  <div style={{ fontSize: 11, color: "#6a1b9a" }}>Sea hares · Coastal beach hazards</div>
+                  <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Sea Animals</div>
+                  <div style={{ fontSize: 11, color: textLight }}>Sea hares · Coastal beach hazards</div>
                 </div>
-                <span style={{ color: "#8e44ad", fontSize: 16 }}>›</span>
+                <span style={{ color: textLight, fontSize: 16 }}>›</span>
               </button>
 
-              <button onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }} style={{ width: "100%", background: "#e8f5e9", border: "1.5px solid #27ae60", borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
+              <button onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 12, padding: "12px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ fontSize: 26 }}>🟢</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: "800", color: "#1b5e20" }}>Blue-Green Algae</div>
-                  <div style={{ fontSize: 11, color: "#2e7d32" }}>Freshwater lakes · Rivers · Dams</div>
+                  <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Blue-Green Algae</div>
+                  <div style={{ fontSize: 11, color: textLight }}>Freshwater lakes · Rivers · Dams</div>
                 </div>
-                <span style={{ color: "#27ae60", fontSize: 16 }}>›</span>
+                <span style={{ color: textLight, fontSize: 16 }}>›</span>
               </button>
 
               {!petProfile && <Btn onClick={function() { setPetForm({ name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" }); setScreen("petprofile"); }}>🐶 Add Pet Profile</Btn>}
@@ -1724,6 +1724,12 @@ export default function App() {
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
             <button onClick={function() { setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🐸 Cane <span style={{ color: accent }}>Toads</span></div>
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Rhinella_marina_%28Marine_toad%29.jpg/320px-Rhinella_marina_%28Marine_toad%29.jpg"
+              alt="Cane Toad"
+              style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover" }}
+              onError={function(e) { e.target.style.display="none"; }}
+            />
             <div style={{ ...card, background: "#fff3e0", border: "1.5px solid #e67e22" }}>
               <div style={{ fontSize: 13, fontWeight: "800", color: "#e65100", marginBottom: 4 }}>⚠️ HIGH RISK — Can kill a dog in 15 minutes</div>
               <div style={{ fontSize: 12, color: "#7a3800", lineHeight: 1.6 }}>Found across QLD, NT, northern NSW and parts of WA. Most active at night and after rain.</div>
@@ -1763,6 +1769,12 @@ export default function App() {
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
             <button onClick={function() { setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🐌 Sea <span style={{ color: accent }}>Animals</span></div>
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Aplysia_californica.jpg/320px-Aplysia_californica.jpg"
+              alt="Sea Hare"
+              style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover" }}
+              onError={function(e) { e.target.style.display="none"; }}
+            />
             <div style={{ ...card, background: "#f3e5f5", border: "1.5px solid #8e44ad" }}>
               <div style={{ fontSize: 13, fontWeight: "800", color: "#6a1b9a", marginBottom: 4 }}>⚠️ HIGH RISK — Sea hares can kill dogs rapidly</div>
               <div style={{ fontSize: 12, color: "#4a148c", lineHeight: 1.6 }}>Sea hares wash up on Australian beaches in summer. Even a quick lick can cause severe poisoning. Keep dogs on lead near beaches.</div>
@@ -1805,6 +1817,12 @@ export default function App() {
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
             <button onClick={function() { setSelectedHazard(null); setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>{selectedHazard.icon} {selectedHazard.name}</div>
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Blue_green_algae_in_a_lake.jpg/320px-Blue_green_algae_in_a_lake.jpg"
+              alt="Blue-Green Algae"
+              style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover" }}
+              onError={function(e) { e.target.style.display="none"; }}
+            />
             <div style={{ ...card, borderLeft: "4px solid " + selectedHazard.color }}>
               <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Where Found</div>
               <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.where}</div>
@@ -1849,151 +1867,115 @@ export default function App() {
       )}
 
 
-      {/* LIVE BAIT MAP SCREEN */}
-      {screen === "map" && (function() {
-        var mapId = "spa-leaflet-map";
-        var riskColors = { EXTREME:"#c0392b", HIGH:"#e67e22", MODERATE:"#f39c12", "LOW-MODERATE":"#7daa2d", LOW:"#27ae60" };
-        return (
-          <div className="fu" style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:50, background:bgCard, display:"flex", flexDirection:"column" }}>
+      {/* USEFUL LINKS SCREEN */}
+      {screen === "map" && (
+        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🗺️ Official <span style={{ color: accent }}>Baiting Maps</span></div>
+            <div style={{ fontSize: 13, color: textLight, lineHeight: 1.6 }}>These are the official government interactive maps for each state. Always check these before heading into the bush with your dog.</div>
 
-            {/* Header */}
-            <div style={{ padding:"12px 16px 8px", background:bgCard, borderBottom:"1px solid "+border, flexShrink:0, paddingTop:58 }}>
-              <div style={{ fontSize:18, fontWeight:"900", color:textMain, marginBottom:8 }}>📍 Live <span style={{ color:accent }}>Bait Map</span></div>
-              <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                {[["all","All"],["baits","🚨 Baits"],["camps","🏕️ Camps"],["extreme","🔴 High Risk"]].map(function(f) {
-                  return <button key={f[0]} onClick={function() { setMapFilter(f[0]); }}
-                    style={{ padding:"4px 10px", borderRadius:20, border:"1.5px solid "+(mapFilter===f[0] ? accent : border), background:mapFilter===f[0] ? accent : bgCard, color:mapFilter===f[0] ? "white" : textSub, fontSize:11, fontWeight:"700", cursor:"pointer", fontFamily:"system-ui" }}>
-                    {f[1]}
-                  </button>;
-                })}
-                <button onClick={function() { var m=document.getElementById(mapId); if(m){m._leaflet_id=null; m.innerHTML="";} setMapRef(null); setScreen("home"); }}
-                  style={{ marginLeft:"auto", padding:"4px 12px", borderRadius:20, border:"1.5px solid "+border, background:bgCard, color:accent, fontSize:11, fontWeight:"700", cursor:"pointer", fontFamily:"system-ui" }}>
-                  ← Back
-                </button>
-              </div>
-            </div>
+            {[
+              {
+                state: "🌿 Western Australia",
+                name: "DBCA Western Shield Map",
+                desc: "Interactive map of all WA fox and feral cat 1080 baiting locations. Covers 3.8 million hectares from Karratha to Esperance. Updated regularly.",
+                url: "https://www.dbca.wa.gov.au/management/threat-management/invasive-animals/western-shield/western-shield-fox-and-feral-cat-baiting-locations",
+                tag: "EXTREME RISK STATE",
+                tagColor: "#c0392b"
+              },
+              {
+                state: "🟠 Victoria",
+                name: "DEECA Ground Baiting Map",
+                desc: "Interactive map of where ground baiting is occurring from 1 March to 1 July 2026 across Gippsland and Hume regions. Updated each baiting season.",
+                url: "https://agriculture.vic.gov.au/livestock-and-animals/livestock-health-and-welfare/livestock-predation-management/livestock-predation-management-in-eastern-victoria/baiting-notifications",
+                tag: "HIGH RISK STATE",
+                tagColor: "#e67e22"
+              },
+              {
+                state: "🔵 New South Wales",
+                name: "BAN1080 NSW Interactive Map",
+                desc: "Comprehensive interactive map showing active and upcoming NSW 1080 baiting sites compiled from NPWS and Local Land Services data. Aerial and ground bait sites marked separately.",
+                url: "https://www.ban1080.org.au/map",
+                tag: "HIGH RISK STATE",
+                tagColor: "#e67e22"
+              },
+              {
+                state: "🟡 NSW Local Land Services",
+                name: "NSW LLS Aerial Baiting Map",
+                desc: "PDF map from Local Land Services showing NSW aerial baiting program areas. Download the latest seasonal map before your trip.",
+                url: "https://www.lls.nsw.gov.au/__data/assets/pdf_file/0006/1552344/Aerial-Baiting-Autumn-2024_Website-Map.pdf",
+                tag: "PDF MAP",
+                tagColor: "#7f8c8d"
+              },
+              {
+                state: "🟤 Queensland",
+                name: "QLD Biosecurity Portal",
+                desc: "Queensland Government biosecurity information on wild dog and fox baiting programs. Contact your local council for current program maps.",
+                url: "https://www.business.qld.gov.au/industries/farms-fishing-forestry/agriculture/land-management/health-pests-weeds-diseases/pests/animals/wild-dogs",
+                tag: "HIGH RISK STATE",
+                tagColor: "#e67e22"
+              },
+              {
+                state: "🔴 South Australia",
+                name: "SA Landscape Boards",
+                desc: "SA Landscape Boards coordinate regional 1080 baiting. Ground baiting only — no aerial. Contact your local board for current program status and maps.",
+                url: "https://www.landscape.sa.gov.au/",
+                tag: "HIGH RISK STATE",
+                tagColor: "#e67e22"
+              },
+              {
+                state: "🟣 Northern Territory",
+                name: "NT Feral Animal Management",
+                desc: "NT Government information on dingo and wild dog management programs. Aerial baiting permitted in NT. All pastoral station land should be treated as potentially baited.",
+                url: "https://nt.gov.au/environment/animals-and-plants/feral-animals-and-weeds/feral-animals/wild-dogs",
+                tag: "EXTREME RISK STATE",
+                tagColor: "#c0392b"
+              },
+              {
+                state: "🟢 Tasmania",
+                name: "TAS NRE Pest Management",
+                desc: "Tasmania uses 1080 for possum and wallaby control — NOT for dingoes or foxes. Much lower risk than mainland. Check NRE Tasmania for current programs.",
+                url: "https://www.nre.tas.gov.au/animals-and-plants/animal-management/management-of-overabundant-wildlife",
+                tag: "LOW-MODERATE RISK",
+                tagColor: "#27ae60"
+              },
+              {
+                state: "📞 Emergency Contacts",
+                name: "Animal Poisons Helpline",
+                desc: "Free 24/7 advice for any suspected poisoning — 1080 baits, sea hares, algae, cane toads or any other toxin. Call immediately if you suspect your dog has eaten a bait.",
+                url: "tel:1300869738",
+                tag: "FREE 24/7",
+                tagColor: accent
+              },
+            ].map(function(link, i) {
+              return (
+                <div key={i} style={{ ...card, padding: 0, overflow: "hidden" }}>
+                  <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid " + border }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                      <div style={{ fontSize: 13, fontWeight: "800", color: textMain }}>{link.state}</div>
+                      <span style={{ fontSize: 9, fontWeight: "700", padding: "2px 7px", borderRadius: 10, background: link.tagColor + "20", color: link.tagColor, border: "1px solid " + link.tagColor + "40" }}>{link.tag}</span>
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: "700", color: accent, marginBottom: 4 }}>{link.name}</div>
+                    <div style={{ fontSize: 12, color: textLight, lineHeight: 1.6 }}>{link.desc}</div>
+                  </div>
+                  <a href={link.url} target="_blank" rel="noreferrer"
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: accent + "08", textDecoration: "none" }}>
+                    <span style={{ fontSize: 12, fontWeight: "700", color: accent }}>Open Map →</span>
+                    <span style={{ fontSize: 10, color: textLight }}>{link.url.startsWith("tel") ? "tap to call" : "opens in browser"}</span>
+                  </a>
+                </div>
+              );
+            })}
 
-            {/* Map */}
-            <div id={mapId} style={{ flex:1, width:"100%", minHeight:0 }}
-              ref={function(el) {
-                if (!el || el._leaflet_id) return;
-                var tries = 0;
-                var init = function() {
-                  if (tries++ > 30) return;
-                  if (!window.L) { setTimeout(init, 200); return; }
-                  try {
-                    var L = window.L;
-                    var map = L.map(el, { zoomControl:true, attributionControl:true }).setView([-25.5, 133.5], 4);
-                    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                      maxZoom:18,
-                      attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>'
-                    }).addTo(map);
-                    setTimeout(function(){ map.invalidateSize(); }, 300);
-
-                    // ── Risk zone overlays ──────────────────────────────
-                    RISK_REGIONS.forEach(function(r) {
-                      if (mapFilter === "baits" || mapFilter === "camps") return;
-                      var show = mapFilter === "extreme" ? (r.risk === "EXTREME" || r.risk === "HIGH") : true;
-                      if (!show) return;
-                      L.circle([r.lat, r.lng], {
-                        radius: r.radius * 1000,
-                        color: riskColors[r.risk] || "#888",
-                        fillColor: riskColors[r.risk] || "#888",
-                        fillOpacity: 0.1,
-                        weight: 1.5,
-                        opacity: 0.6
-                      }).addTo(map).bindPopup(
-                        "<div style='min-width:180px'>" +
-                        "<b>" + r.name + "</b><br>" +
-                        "<span style='color:" + (riskColors[r.risk]||"#888") + ";font-weight:800'>" + r.risk + " RISK</span><br>" +
-                        "<small style='line-height:1.5'>" + r.notes.slice(0,150) + "...</small>" +
-                        "</div>"
-                      );
-                    });
-
-                    // ── Campsite markers with real GPS ──────────────────
-                    if (mapFilter !== "baits") {
-                      CAMPSITE_RATINGS.forEach(function(c) {
-                        if (!c.lat || !c.lng) return;
-                        if (mapFilter === "extreme" && c.risk !== "EXTREME" && c.risk !== "HIGH") return;
-                        var col = riskColors[c.risk] || "#888";
-                        var icon = L.divIcon({
-                          html: "<div style='background:"+col+";width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.5);cursor:pointer'></div>",
-                          iconSize:[12,12], iconAnchor:[6,6], className:""
-                        });
-                        L.marker([c.lat, c.lng], {icon:icon}).addTo(map).bindPopup(
-                          "<div style='min-width:200px'>" +
-                          "<b style='font-size:14px'>" + c.name + "</b><br>" +
-                          "<span style='color:"+col+";font-weight:800;font-size:12px'>" + c.risk + " RISK</span><br>" +
-                          "<div style='margin-top:6px;font-size:12px;line-height:1.6'>" +
-                          "🐕 " + c.dog + "<br>" +
-                          (c.nearestTown ? "📍 " + c.nearestTown + "<br>" : "") +
-                          (c.bestSeason ? "📅 Best time: " + c.bestSeason + "<br>" : "") +
-                          (c.remoteness ? "🗺️ Remoteness: " + c.remoteness : "") +
-                          "</div>" +
-                          "<div style='margin-top:8px;font-size:11px;color:#666;border-top:1px solid #eee;padding-top:6px'>" + c.notes.slice(0,120) + "...</div>" +
-                          "</div>"
-                        );
-                      });
-                    }
-
-                    // ── User location ───────────────────────────────────
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(function(pos) {
-                        var icon = L.divIcon({
-                          html: "<div style='background:"+accent+";width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px "+accent+"60;animation:pulse 2s ease-out infinite'></div>",
-                          iconSize:[18,18], iconAnchor:[9,9], className:""
-                        });
-                        L.marker([pos.coords.latitude, pos.coords.longitude], {icon:icon, zIndexOffset:1000})
-                          .addTo(map)
-                          .bindPopup("<b style='color:"+accent+"'>📍 You are here</b>")
-                          .openPopup();
-                        map.setView([pos.coords.latitude, pos.coords.longitude], 9);
-                      }, function(){});
-                    }
-
-                    // ── Community bait report pins ──────────────────────
-                    if (mapFilter !== "camps") {
-                      try {
-                        var reports = JSON.parse(localStorage.getItem("baitReports") || "[]");
-                        reports.forEach(function(r) {
-                          if (!r.lat || !r.lng) return;
-                          var icon = L.divIcon({
-                            html: "<div style='background:#c0392b;color:white;width:28px;height:28px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;box-shadow:0 2px 6px rgba(0,0,0,0.5);cursor:pointer'>!</div>",
-                            iconSize:[28,28], iconAnchor:[14,14], className:""
-                          });
-                          L.marker([r.lat, r.lng], {icon:icon, zIndexOffset:500}).addTo(map).bindPopup(
-                            "<div style='min-width:180px'>" +
-                            "<b style='color:#c0392b;font-size:13px'>⚠️ Bait Sign Reported</b><br>" +
-                            "<b>" + r.place + "</b><br>" +
-                            "<small style='color:#666'>" + r.time + "</small>" +
-                            (r.note ? "<br><small style='font-style:italic'>" + r.note + "</small>" : "") +
-                            "</div>"
-                          );
-                        });
-                      } catch(e) {}
-                    }
-
-                    setMapRef(map);
-                  } catch(err) { console.error("Map error:", err); }
-                };
-                setTimeout(init, 150);
-              }}
-            />
-
-            {/* Legend */}
-            <div style={{ padding:"8px 16px 10px", background:bgCard, borderTop:"1px solid "+border, flexShrink:0 }}>
-              <div style={{ display:"flex", gap:14, fontSize:10, color:textLight, flexWrap:"wrap" }}>
-                <span><span style={{ display:"inline-block", width:10, height:10, borderRadius:"50%", background:"#c0392b", marginRight:4 }}/>Bait reports</span>
-                <span><span style={{ display:"inline-block", width:10, height:10, borderRadius:"50%", background:accent, marginRight:4 }}/>Your location</span>
-                <span><span style={{ display:"inline-block", width:10, height:10, borderRadius:"50%", background:"#c0392b", marginRight:4, opacity:0.5 }}/>EXTREME risk</span>
-                <span><span style={{ display:"inline-block", width:10, height:10, borderRadius:"50%", background:"#e67e22", marginRight:4, opacity:0.5 }}/>HIGH risk</span>
-                <span><span style={{ display:"inline-block", width:10, height:10, borderRadius:"50%", background:"#f39c12", marginRight:4, opacity:0.5 }}/>MODERATE</span>
+            <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
+              <div style={{ fontSize: 12, fontWeight: "800", color: "#e65100", marginBottom: 6 }}>⚠️ Important Note</div>
+              <div style={{ fontSize: 12, color: "#7a3800", lineHeight: 1.7 }}>
+                These maps show government-managed programs only. Private landholders also use 1080 and are not required to report locations publicly. Always treat all rural and bushland areas as potentially baited and keep dogs on lead.
               </div>
             </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* PRO UPGRADE SCREEN */}
       {screen === "upgrade" && (
