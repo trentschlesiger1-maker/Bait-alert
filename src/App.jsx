@@ -1853,10 +1853,12 @@ export default function App() {
               </div>
             </div>
 
-            <div id="safepets-map" style={{ flex: 1, width: "100%" }} ref={function(el) {
+            <div id="safepets-map" style={{ flex: 1, width: "100%", minHeight: 400 }} ref={function(el) {
               if (!el || mapRef) return;
-              if (typeof window.L === "undefined") return;
-              var L = window.L;
+              var initMap = function() {
+                if (typeof window.L === "undefined") { setTimeout(initMap, 200); return; }
+                if (el._leaflet_id) return;
+                var L = window.L;
               var map = L.map(el, { zoomControl: true, attributionControl: false }).setView([-25.5, 133.5], 4);
               L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
                 maxZoom: 18, attribution: "© OpenStreetMap"
@@ -1943,6 +1945,8 @@ export default function App() {
               }
 
               setMapRef(map);
+              };
+              initMap();
             }} />
 
             <div style={{ padding: "8px 16px", background: bgCard, borderTop: "1px solid " + border, display: "flex", gap: 16, fontSize: 10, color: textLight }}>
