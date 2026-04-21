@@ -351,7 +351,7 @@ export default function App() {
 
   function shareRisk() {
     if (!assessment) return;
-    const text = "Safe Pets Australia Alert: " + assessment.risk + " 1080 bait risk area near " + (placeName || assessment.region) + ". Travelling with dogs? Download the free SafePaws app to stay safe!";
+    const text = "Safe Pets Australia Alert: " + assessment.risk + " 1080 bait risk area near " + (placeName || assessment.region) + ". Travelling with dogs? Download the free Safe Pets Australia app to stay safe!";
     if (navigator.share) {
       navigator.share({ title: "Safe Pets Australia", text: text });
     } else {
@@ -769,6 +769,17 @@ export default function App() {
                     <div style={{ fontSize: 14, color: textSub, lineHeight: 1.8 }}>{assessment.notes}</div>
                   </div>
 
+                  {/* Secondary poisoning warning for high risk */}
+                  {(assessment.risk === "HIGH" || assessment.risk === "EXTREME") && (
+                    <div style={{ ...card, background: "#fdecea", border: "1px solid #f5b7b1" }}>
+                      <div style={{ fontSize: 12, fontWeight: "800", color: "#c0392b", marginBottom: 6 }}>☠️ Secondary Poisoning — The Hidden Danger</div>
+                      <div style={{ fontSize: 13, color: "#7b241c", lineHeight: 1.7 }}>
+                        Most 1080 dog deaths are from eating a <strong>poisoned carcass</strong> — not a bait directly. Dead foxes, rabbits and feral cats remain toxic for <strong>up to 75 days</strong> after a baiting program ends. Signs coming down does NOT mean it is safe.<br /><br />
+                        <strong>Consider a basket muzzle</strong> — it physically prevents your dog eating anything off the ground while still allowing them to pant and breathe normally. Strongly recommended in HIGH and EXTREME risk areas.
+                      </div>
+                    </div>
+                  )}
+
                   {/* AI */}
                   <div style={{ ...card, borderLeft: "3px solid " + (aiResult ? "#3498db" : border) }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -934,22 +945,71 @@ export default function App() {
                       {symptomType === "snake" ? "There is NO antidote for most snake venoms — only antivenom from a vet can help. Every minute matters." : "There is NO antidote for 1080 poison. Early vet treatment is the only chance of survival."}
                     </div>
                   </div>
+
                   <a href="tel:1300869738" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#c0392b", color: "white", padding: "14px 16px", borderRadius: 10, textDecoration: "none" }}>
-                    <div><div style={{ fontSize: 14, fontWeight: "800" }}>Animal Poisons Helpline</div><div style={{ fontSize: 11, opacity: 0.85 }}>Free 24/7 — Call first</div></div>
+                    <div><div style={{ fontSize: 14, fontWeight: "800" }}>Animal Poisons Helpline</div><div style={{ fontSize: 11, opacity: 0.85 }}>Free 24/7 — Call this first</div></div>
                     <div style={{ fontSize: 15, fontWeight: "900" }}>1300 869 738</div>
                   </a>
-                  {vets && vets[0] && (
-                    <a href={"tel:" + (vets[0].phone || "")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: accent, color: "white", padding: "14px 16px", borderRadius: 10, textDecoration: "none" }}>
-                      <div><div style={{ fontSize: 14, fontWeight: "800" }}>{vets[0].name || "Nearest Vet"}</div><div style={{ fontSize: 11, opacity: 0.85 }}>{vets[0].vicinity || "Tap to call"}</div></div>
-                      <div style={{ fontSize: 14, fontWeight: "900" }}>📞 Call</div>
-                    </a>
-                  )}
+
+                  {/* Nearest vets from GPS */}
+                  <div style={{ ...card, border: "2px solid " + accent }}>
+                    <div style={{ fontSize: 12, fontWeight: "800", color: accent, marginBottom: 10 }}>📍 Nearest Vets to You</div>
+                    {vetsLoading && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, color: textLight, fontSize: 13 }}>
+                        <div className="spin" style={{ width: 12, height: 12, border: "2px solid #eee", borderTop: "2px solid " + accent, borderRadius: "50%", flexShrink: 0 }} />
+                        Finding nearest vets...
+                      </div>
+                    )}
+                    {!vetsLoading && !vets && (
+                      <div>
+                        <div style={{ fontSize: 12, color: textLight, marginBottom: 8 }}>Tap to find nearest vets using your GPS location.</div>
+                        <button onClick={function() {
+                          if (navigator.geolocation) {
+                            setVetsLoading(true);
+                            navigator.geolocation.getCurrentPosition(function(pos) {
+                              fetchVets(pos.coords.latitude, pos.coords.longitude);
+                            }, function() {
+                              setVetsLoading(false);
+                            });
+                          }
+                        }} style={{ width: "100%", background: accent, color: "white", border: "none", borderRadius: 8, padding: "11px", fontSize: 13, fontWeight: "700", cursor: "pointer", fontFamily: "system-ui" }}>
+                          📍 Find Nearest Vets Now
+                        </button>
+                      </div>
+                    )}
+                    {!vetsLoading && vets && vets.length === 0 && (
+                      <div style={{ fontSize: 12, color: textLight }}>No vets found nearby. Search Google Maps for "emergency vet near me".</div>
+                    )}
+                    {!vetsLoading && vets && vets.map(function(v, i) {
+                      return (
+                        <div key={i} style={{ marginBottom: i < vets.length - 1 ? 10 : 0, paddingBottom: i < vets.length - 1 ? 10 : 0, borderBottom: i < vets.length - 1 ? "1px solid " + border : "none" }}>
+                          <div style={{ fontSize: 13, fontWeight: "700", color: textMain, marginBottom: 2 }}>{v.name}</div>
+                          {v.address && <div style={{ fontSize: 11, color: textLight, marginBottom: 2 }}>{v.address}</div>}
+                          {v.distance && <div style={{ fontSize: 11, color: accent, fontWeight: "600", marginBottom: 4 }}>📍 {v.distance} away</div>}
+                          {v.phone ? (
+                            <a href={"tel:" + v.phone} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: accent, color: "white", padding: "10px 12px", borderRadius: 8, textDecoration: "none" }}>
+                              <span style={{ fontSize: 13, fontWeight: "800" }}>📞 Call Now</span>
+                              <span style={{ fontSize: 12 }}>{v.phone}</span>
+                            </a>
+                          ) : (
+                            <a href={"https://www.google.com/maps/search/vet+near+" + encodeURIComponent(v.address || "me")} target="_blank" rel="noreferrer"
+                              style={{ display: "block", background: accent, color: "white", padding: "10px 12px", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: "800", textAlign: "center" }}>
+                              📍 Get Directions
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Pet home vet */}
                   {petProfile && petProfile.vetPhone && (
                     <a href={"tel:" + petProfile.vetPhone} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#5d4e0a", color: "white", padding: "14px 16px", borderRadius: 10, textDecoration: "none" }}>
                       <div><div style={{ fontSize: 14, fontWeight: "800" }}>Your Home Vet — {petProfile.vet || "Saved Vet"}</div><div style={{ fontSize: 11, opacity: 0.85 }}>{petProfile.vetPhone}</div></div>
                       <div style={{ fontSize: 14, fontWeight: "900" }}>📞 Call</div>
                     </a>
                   )}
+
                   <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
                     <div style={{ fontSize: 12, fontWeight: "800", color: "#e65100", marginBottom: 8 }}>While you drive to the vet:</div>
                     {(symptomType === "snake" ? [
@@ -1010,7 +1070,8 @@ export default function App() {
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>💊 <span style={{ color: accent }}>1080 First Aid</span></div>
               <div style={{ background: "#fdecea", border: "1px solid #f5b7b1", borderRadius: 10, padding: 12 }}>
-                <div style={{ fontSize: 13, color: "#922b21", fontWeight: "700", marginBottom: 10 }}>⚠️ NO antidote exists. Every second counts. Call now.</div>
+                <div style={{ fontSize: 14, color: "#922b21", fontWeight: "800", marginBottom: 6 }}>⚡ Act BEFORE symptoms appear</div>
+                <div style={{ fontSize: 13, color: "#922b21", lineHeight: 1.7, marginBottom: 10 }}>Do NOT wait. Your dog can seem completely normal for up to 12 hours after eating 1080. Once symptoms appear, the prognosis is very poor. Call immediately if you suspect ingestion.</div>
                 <a href="tel:1300869738" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#c0392b", color: "white", padding: "11px 14px", borderRadius: 10, textDecoration: "none", marginBottom: 8 }}>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: "800" }}>Animal Poisons Helpline</div>
@@ -1331,6 +1392,55 @@ export default function App() {
                       </div>
                     </div>
                   )}
+
+                  {/* PDF Export — Pro feature */}
+                  {routeResult.overall !== "UNKNOWN" && (
+                    isPro ? (
+                      <button onClick={function() {
+                        var lines = [
+                          "SAFE PETS AUSTRALIA — TRIP SAFETY REPORT",
+                          "Generated: " + new Date().toLocaleDateString("en-AU"),
+                          "",
+                          "ROUTE: " + routeStart + " to " + routeEnd,
+                          "OVERALL RISK: " + routeResult.overall,
+                          "",
+                          routeResult.summary,
+                          "",
+                          "RISK ZONES ALONG ROUTE:",
+                        ];
+                        (routeResult.segments || []).forEach(function(seg) {
+                          lines.push("  • " + seg.name + " — " + seg.risk);
+                          lines.push("    " + seg.note);
+                          lines.push("");
+                        });
+                        lines.push("SAFETY REMINDERS:");
+                        lines.push("  • Secondary poisoning: poisoned carcasses remain toxic for up to 75 days");
+                        lines.push("  • Signs coming down does NOT mean the area is safe");
+                        lines.push("  • Consider a basket muzzle in HIGH and EXTREME risk areas");
+                        lines.push("  • Act BEFORE symptoms appear — call 1300 869 738 immediately");
+                        lines.push("");
+                        lines.push("EMERGENCY: Animal Poisons Helpline 1300 869 738 (free 24/7)");
+                        lines.push("");
+                        lines.push("This report is for guidance only. Always check official government baiting maps.");
+                        var text = lines.join("\n");
+                        var blob = new Blob([text], { type: "text/plain" });
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement("a");
+                        a.href = url;
+                        a.download = "SafePets_TripReport_" + routeStart + "_to_" + routeEnd + ".txt";
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }} style={{ width: "100%", background: "#0d1117", color: "white", border: "none", borderRadius: 10, padding: "14px", fontSize: 14, fontWeight: "700", cursor: "pointer", fontFamily: "system-ui" }}>
+                        📄 Export Trip Safety Report
+                      </button>
+                    ) : (
+                      <div style={{ ...card, background: accent + "10", border: "1.5px solid " + accent, textAlign: "center", padding: 16 }}>
+                        <div style={{ fontSize: 14, fontWeight: "800", color: textMain, marginBottom: 4 }}>📄 Export Trip Safety Report</div>
+                        <div style={{ fontSize: 12, color: textLight, marginBottom: 12 }}>Download a full trip safety report as a text file — Safe Pets Pro feature.</div>
+                        <Btn primary onClick={function() { setScreen("upgrade"); }}>Upgrade to Pro — $9.99</Btn>
+                      </div>
+                    )
+                  )}
                 </>
               )}
               <Btn onClick={function() { setScreen("home"); }}>← Back</Btn>
@@ -1340,6 +1450,22 @@ export default function App() {
 
         {/* CAMPSITES */}
         {screen === "campsites" && (function() {
+          if (!isPro) return (
+            <div className="fu" style={{ padding: "20px 16px 24px" }}>
+              <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🏕️ Campsite <span style={{ color: accent }}>Safety Ratings</span></div>
+                <div style={{ ...card, background: accent + "10", border: "2px solid " + accent, textAlign: "center", padding: 24 }}>
+                  <div style={{ fontSize: 32, marginBottom: 8 }}>🏕️</div>
+                  <div style={{ fontSize: 17, fontWeight: "900", color: textMain, marginBottom: 8 }}>Safe Pets Pro Feature</div>
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7, marginBottom: 16 }}>
+                    118+ campsite safety ratings covering every state — with 1080 risk level, dog policy, nearest town, remoteness rating and detailed notes for each site.
+                  </div>
+                  <Btn primary onClick={function() { setScreen("upgrade"); }}>Unlock All Features — $9.99</Btn>
+                </div>
+                <Btn onClick={function() { setScreen("home"); }}>← Back</Btn>
+              </div>
+            </div>
+          );
           var states = ["ALL","WA","QLD","NSW","VIC","SA","NT","TAS"];
           var filtered = CAMPSITE_RATINGS.filter(function(c) {
             var matchState = campsiteFilter === "ALL" || c.state.includes(campsiteFilter);
@@ -1388,6 +1514,12 @@ export default function App() {
                         </div>
                       )}
                       <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{c.notes}</div>
+                      {(c.risk === "HIGH" || c.risk === "EXTREME") && (
+                        <div style={{ marginTop: 8, background: "#fdecea", borderRadius: 8, padding: "8px 10px" }}>
+                          <div style={{ fontSize: 11, fontWeight: "800", color: "#c0392b", marginBottom: 3 }}>☠️ Secondary Poisoning Risk</div>
+                          <div style={{ fontSize: 11, color: "#7b241c", lineHeight: 1.6 }}>Never let your dog eat any carcass in this area. Poisoned animals remain toxic for up to 75 days after baiting ends — even after signs come down.</div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -1797,172 +1929,66 @@ export default function App() {
       )}
 
       {/* HAZARD DETAIL — Blue-Green Algae */}
-      {screen === "hazarddetail" && selectedHazard && (
+            {screen === "hazarddetail" && (
         <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
-            <button onClick={function() { setSelectedHazard(null); setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
-            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>{selectedHazard.icon} {selectedHazard.name}</div>
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Blue_green_algae_in_a_lake.jpg/320px-Blue_green_algae_in_a_lake.jpg"
-              alt="Blue-Green Algae"
-              style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover" }}
-              onError={function(e) { e.target.style.display="none"; }}
-            />
-            <div style={{ ...card, borderLeft: "4px solid " + selectedHazard.color }}>
-              <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Where Found</div>
-              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.where}</div>
-            </div>
-            <div style={card}>
-              <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Peak Season</div>
-              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.season}</div>
-            </div>
-            <div style={card}>
-              <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>What It Looks Like</div>
-              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.appearance}</div>
-            </div>
-            <div style={card}>
-              <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Why It Is Dangerous</div>
-              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{selectedHazard.danger}</div>
-            </div>
-            <div style={{ ...card, borderLeft: "4px solid #e74c3c" }}>
-              <div style={{ fontSize: 11, fontWeight: "800", color: "#e74c3c", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>⚠️ Symptoms</div>
-              {selectedHazard.symptoms.map(function(s, i) {
-                return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e74c3c", marginTop: 5, flexShrink: 0 }} />
-                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.5 }}>{s}</div>
-                </div>;
-              })}
-            </div>
-            <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
-              <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 First Aid</div>
-              {selectedHazard.firstAid.map(function(s, i) {
-                return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 7 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#e65100", color: "white", fontSize: 11, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i+1}</div>
-                  <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.6 }}>{s}</div>
-                </div>;
-              })}
-            </div>
-            <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
-              <div style={{ fontSize: 11, fontWeight: "800", color: accent, marginBottom: 6 }}>💡 Prevention</div>
-              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{selectedHazard.tips}</div>
-            </div>
-            <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "14px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 Emergency: 1300 869 738</a>
-          </div>
-        </div>
-      )}
-
-
-      {/* USEFUL LINKS SCREEN */}
-      {screen === "map" && (
-        <div className="fu" style={{ padding: "20px 16px 24px" }}>
-          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🗺️ Official <span style={{ color: accent }}>Baiting Maps</span></div>
-            <div style={{ fontSize: 13, color: textLight, lineHeight: 1.6 }}>These are the official government interactive maps for each state. Always check these before heading into the bush with your dog.</div>
-
-            {[
-              {
-                state: "🌿 Western Australia",
-                name: "DBCA Western Shield Map",
-                desc: "Interactive map of all WA fox and feral cat 1080 baiting locations. Covers 3.8 million hectares from Karratha to Esperance. Updated regularly.",
-                url: "https://www.dbca.wa.gov.au/management/threat-management/invasive-animals/western-shield/western-shield-fox-and-feral-cat-baiting-locations",
-                tag: "EXTREME RISK STATE",
-                tagColor: "#c0392b"
-              },
-              {
-                state: "🟠 Victoria",
-                name: "DEECA Ground Baiting Map",
-                desc: "Interactive map of where ground baiting is occurring from 1 March to 1 July 2026 across Gippsland and Hume regions. Updated each baiting season.",
-                url: "https://agriculture.vic.gov.au/livestock-and-animals/livestock-health-and-welfare/livestock-predation-management/livestock-predation-management-in-eastern-victoria/baiting-notifications",
-                tag: "HIGH RISK STATE",
-                tagColor: "#e67e22"
-              },
-              {
-                state: "🔵 New South Wales",
-                name: "BAN1080 NSW Interactive Map",
-                desc: "Comprehensive interactive map showing active and upcoming NSW 1080 baiting sites compiled from NPWS and Local Land Services data. Aerial and ground bait sites marked separately.",
-                url: "https://www.ban1080.org.au/map",
-                tag: "HIGH RISK STATE",
-                tagColor: "#e67e22"
-              },
-              {
-                state: "🟡 NSW Local Land Services",
-                name: "NSW LLS Aerial Baiting Map",
-                desc: "PDF map from Local Land Services showing NSW aerial baiting program areas. Download the latest seasonal map before your trip.",
-                url: "https://www.lls.nsw.gov.au/__data/assets/pdf_file/0006/1552344/Aerial-Baiting-Autumn-2024_Website-Map.pdf",
-                tag: "PDF MAP",
-                tagColor: "#7f8c8d"
-              },
-              {
-                state: "🟤 Queensland",
-                name: "QLD Biosecurity Portal",
-                desc: "Queensland Government biosecurity information on wild dog and fox baiting programs. Contact your local council for current program maps.",
-                url: "https://www.business.qld.gov.au/industries/farms-fishing-forestry/agriculture/land-management/health-pests-weeds-diseases/pests/animals/wild-dogs",
-                tag: "HIGH RISK STATE",
-                tagColor: "#e67e22"
-              },
-              {
-                state: "🔴 South Australia",
-                name: "SA Landscape Boards",
-                desc: "SA Landscape Boards coordinate regional 1080 baiting. Ground baiting only — no aerial. Contact your local board for current program status and maps.",
-                url: "https://www.landscape.sa.gov.au/",
-                tag: "HIGH RISK STATE",
-                tagColor: "#e67e22"
-              },
-              {
-                state: "🟣 Northern Territory",
-                name: "NT Feral Animal Management",
-                desc: "NT Government information on dingo and wild dog management programs. Aerial baiting permitted in NT. All pastoral station land should be treated as potentially baited.",
-                url: "https://nt.gov.au/environment/animals-and-plants/feral-animals-and-weeds/feral-animals/wild-dogs",
-                tag: "EXTREME RISK STATE",
-                tagColor: "#c0392b"
-              },
-              {
-                state: "🟢 Tasmania",
-                name: "TAS NRE Pest Management",
-                desc: "Tasmania uses 1080 for possum and wallaby control — NOT for dingoes or foxes. Much lower risk than mainland. Check NRE Tasmania for current programs.",
-                url: "https://www.nre.tas.gov.au/animals-and-plants/animal-management/management-of-overabundant-wildlife",
-                tag: "LOW-MODERATE RISK",
-                tagColor: "#27ae60"
-              },
-              {
-                state: "📞 Emergency Contacts",
-                name: "Animal Poisons Helpline",
-                desc: "Free 24/7 advice for any suspected poisoning — 1080 baits, sea hares, algae, cane toads or any other toxin. Call immediately if you suspect your dog has eaten a bait.",
-                url: "tel:1300869738",
-                tag: "FREE 24/7",
-                tagColor: accent
-              },
-            ].map(function(link, i) {
+            {(function() {
+              var h = selectedHazard || HAZARDS.find(function(x) { return x.id === "algae"; });
+              if (!h) return null;
               return (
-                <div key={i} style={{ ...card, padding: 0, overflow: "hidden" }}>
-                  <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid " + border }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                      <div style={{ fontSize: 13, fontWeight: "800", color: textMain }}>{link.state}</div>
-                      <span style={{ fontSize: 9, fontWeight: "700", padding: "2px 7px", borderRadius: 10, background: link.tagColor + "20", color: link.tagColor, border: "1px solid " + link.tagColor + "40" }}>{link.tag}</span>
-                    </div>
-                    <div style={{ fontSize: 12, fontWeight: "700", color: accent, marginBottom: 4 }}>{link.name}</div>
-                    <div style={{ fontSize: 12, color: textLight, lineHeight: 1.6 }}>{link.desc}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <button onClick={function() { setSelectedHazard(null); setScreen("home"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back</button>
+                  <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>{h.name}</div>
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Blue_green_algae_in_a_lake.jpg/320px-Blue_green_algae_in_a_lake.jpg"
+                    alt="Blue-Green Algae" style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover" }}
+                    onError={function(e) { e.target.style.display="none"; }} />
+                  <div style={{ ...card, borderLeft: "4px solid " + h.color }}>
+                    <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Where Found</div>
+                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.where}</div>
                   </div>
-                  <a href={link.url} target="_blank" rel="noreferrer"
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: accent + "08", textDecoration: "none" }}>
-                    <span style={{ fontSize: 12, fontWeight: "700", color: accent }}>Open Map →</span>
-                    <span style={{ fontSize: 10, color: textLight }}>{link.url.startsWith("tel") ? "tap to call" : "opens in browser"}</span>
-                  </a>
+                  <div style={card}>
+                    <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Peak Season</div>
+                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.season}</div>
+                  </div>
+                  <div style={card}>
+                    <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>What It Looks Like</div>
+                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.appearance}</div>
+                  </div>
+                  <div style={card}>
+                    <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Why It Is Dangerous</div>
+                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.danger}</div>
+                  </div>
+                  <div style={{ ...card, borderLeft: "4px solid #e74c3c" }}>
+                    <div style={{ fontSize: 11, fontWeight: "800", color: "#e74c3c", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>⚠️ Symptoms</div>
+                    {h.symptoms.map(function(s, i) {
+                      return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e74c3c", marginTop: 5, flexShrink: 0 }} />
+                        <div style={{ fontSize: 13, color: textSub, lineHeight: 1.5 }}>{s}</div>
+                      </div>;
+                    })}
+                  </div>
+                  <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
+                    <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 First Aid</div>
+                    {h.firstAid.map(function(s, i) {
+                      return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 7 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#e65100", color: "white", fontSize: 11, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i+1}</div>
+                        <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.6 }}>{s}</div>
+                      </div>;
+                    })}
+                  </div>
+                  <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+                    <div style={{ fontSize: 11, fontWeight: "800", color: accent, marginBottom: 6 }}>💡 Prevention</div>
+                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{h.tips}</div>
+                  </div>
+                  <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "14px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 Emergency: 1300 869 738</a>
                 </div>
               );
-            })}
-
-            <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
-              <div style={{ fontSize: 12, fontWeight: "800", color: "#e65100", marginBottom: 6 }}>⚠️ Important Note</div>
-              <div style={{ fontSize: 12, color: "#7a3800", lineHeight: 1.7 }}>
-                These maps show government-managed programs only. Private landholders also use 1080 and are not required to report locations publicly. Always treat all rural and bushland areas as potentially baited and keep dogs on lead.
-              </div>
-            </div>
+            })()}
           </div>
         </div>
       )}
 
-      {/* PRO UPGRADE SCREEN */}
+{/* PRO UPGRADE SCREEN */}
       {screen === "upgrade" && (
         <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1970,35 +1996,25 @@ export default function App() {
             <div style={{ ...card, background: "linear-gradient(135deg, " + accent + "15, " + accent + "05)", border: "2px solid " + accent }}>
               <div style={{ fontSize: 16, fontWeight: "900", color: accent, marginBottom: 4 }}>Upgrade to Pro</div>
               <div style={{ fontSize: 13, color: textSub, marginBottom: 16, lineHeight: 1.6 }}>For serious travellers and grey nomads who want full safety coverage for every trip.</div>
-              <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-                <button onClick={function() {
-                  setIsPro(true);
-                  try { localStorage.setItem("isPro", "true"); } catch {}
-                  setScreen("home");
-                  alert("Welcome to Pro! All features unlocked.");
-                }} style={{ flex: 1, background: accent, color: "white", border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: "800", cursor: "pointer" }}>
-                  $2.99 / month
-                </button>
-                <button onClick={function() {
-                  setIsPro(true);
-                  try { localStorage.setItem("isPro", "true"); } catch {}
-                  setScreen("home");
-                  alert("Welcome to Pro! All features unlocked.");
-                }} style={{ flex: 1, background: "#0d1117", color: "white", border: "none", borderRadius: 10, padding: "14px", fontSize: 15, fontWeight: "800", cursor: "pointer" }}>
-                  $19.99 / year
-                </button>
-              </div>
-              <div style={{ fontSize: 10, color: textLight, textAlign: "center" }}>Best value — save 44% with annual plan</div>
+              <button onClick={function() {
+                setIsPro(true);
+                try { localStorage.setItem("isPro", "true"); } catch {}
+                setScreen("home");
+              }} style={{ width: "100%", background: accent, color: "white", border: "none", borderRadius: 10, padding: "16px", fontSize: 17, fontWeight: "800", cursor: "pointer", marginBottom: 8 }}>
+                Upgrade — $9.99 one-off
+              </button>
+              <div style={{ fontSize: 11, color: textLight, textAlign: "center" }}>One payment. Everything included. No subscription.</div>
             </div>
             <div style={card}>
               <div style={{ fontSize: 13, fontWeight: "800", color: textMain, marginBottom: 10 }}>Pro includes everything in Free plus:</div>
               {[
-                ["🔍", "AI Area Search", "Type any Australian location — get a full risk briefing, nearest vets, campsites and snake risk before you leave home"],
-                ["🏕️", "Full Campsite Database", "All 118+ campsite safety ratings with dog policies, nearest town and remoteness ratings"],
-                ["🗺️", "Offline Risk Maps", "Download risk zone maps for areas with no signal"],
+                ["🏕️", "Full Campsite Database", "118+ campsite safety ratings with dog policies, nearest town, remoteness and best season"],
+                ["🐍", "Full Snake ID Guide", "All 10 species with photos, behaviour notes and dog-specific risk information"],
+                ["🗺️", "Route Risk Checker", "Check 1080 risk along your full driving route with visual map"],
+                ["🐶", "Pet Profile", "Save your dog's details, microchip number, vet contacts and medical notes"],
+                ["🔍", "AI Area Search", "Type any Australian location — get a full AI-generated safety briefing"],
+                ["📄", "Trip Safety Report", "Export a full trip safety report as a downloadable file"],
                 ["🔔", "Risk Zone Alerts", "Push notifications when you enter HIGH or EXTREME risk areas"],
-                ["📄", "Trip Safety Report", "Export a PDF safety report for your trip"],
-                ["🌦️", "Seasonal Overlays", "See how the current season affects risk in your area"],
               ].map(function(f, i) {
                 return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
                   <div style={{ fontSize: 20, flexShrink: 0 }}>{f[0]}</div>
@@ -2047,21 +2063,26 @@ export default function App() {
                     setAreaResult(null);
                     fetch("https://api.anthropic.com/v1/messages", {
                       method: "POST",
-                      headers: { "Content-Type": "application/json" },
+                      headers: {
+                        "Content-Type": "application/json",
+                        "anthropic-version": "2023-06-01",
+                        "anthropic-dangerous-direct-browser-access": "true"
+                      },
                       body: JSON.stringify({
-                        model: "claude-sonnet-4-20250514",
-                        max_tokens: 1000,
+                        model: "claude-opus-4-6",
+                        max_tokens: 800,
                         messages: [{
                           role: "user",
-                          content: "You are Safe Pets Australia, a pet safety app for Australian dog owners. Give a safety briefing for travelling with a dog to: " + areaSearch + ". Include: (1) 1080 bait risk rating (LOW/MODERATE/HIGH/EXTREME) with explanation of what programs operate there, (2) best time of year to visit regarding bait risk, (3) snake risk level and species to watch for, (4) any other hazards (sea hares, blue-green algae, cane toads if relevant), (5) practical tips for keeping dogs safe there. Be specific, accurate and practical. Format with clear sections. Keep it concise but useful."
+                          content: "You are Safe Pets Australia. Give a brief dog safety briefing for: " + areaSearch + ". Cover: 1080 bait risk rating and programs, best season to visit, snake risk and species, other hazards if relevant. Practical tips only. Plain text, no markdown symbols."
                         }]
                       })
                     }).then(function(r) { return r.json(); }).then(function(d) {
+                      if (d.error) { setAreaResult("Service unavailable. Please try again later."); setAreaLoading(false); return; }
                       var text = d.content && d.content[0] && d.content[0].text;
-                      setAreaResult(text || "Unable to get results. Please try again.");
+                      setAreaResult(text || "No results returned. Please try again.");
                       setAreaLoading(false);
-                    }).catch(function() {
-                      setAreaResult("Unable to connect. Please check your connection and try again.");
+                    }).catch(function(err) {
+                      setAreaResult("Unable to connect. Please check your internet connection and try again.");
                       setAreaLoading(false);
                     });
                   }}>
