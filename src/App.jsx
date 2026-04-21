@@ -1840,8 +1840,8 @@ export default function App() {
       {/* LIVE BAIT MAP SCREEN */}
       {screen === "map" && (function() {
         return (
-          <div className="fu" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 120px)" }}>
-            <div style={{ padding: "14px 16px 10px", background: bgCard, borderBottom: "1px solid " + border }}>
+          <div className="fu" style={{ display: "flex", flexDirection: "column", position: "fixed", top: 56, left: 0, right: 0, bottom: 56, zIndex: 10, background: bgCard }}>
+            <div style={{ padding: "10px 16px 8px", background: bgCard, borderBottom: "1px solid " + border, flexShrink: 0 }}>
               <div style={{ fontSize: 18, fontWeight: "900", color: textMain, marginBottom: 8 }}>📍 Live <span style={{ color: accent }}>Bait Map</span></div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {[["all","All"], ["baits","🚨 Bait Signs"], ["campsites","🏕️ Campsites"]].map(function(f) {
@@ -1853,7 +1853,7 @@ export default function App() {
               </div>
             </div>
 
-            <div id="safepets-map" style={{ flex: 1, width: "100%", minHeight: 400 }} ref={function(el) {
+            <div id="safepets-map" style={{ flex: 1, width: "100%", minHeight: 0 }} ref={function(el) {
               if (!el || mapRef) return;
               var initMap = function() {
                 if (typeof window.L === "undefined") { setTimeout(initMap, 200); return; }
@@ -1944,6 +1944,7 @@ export default function App() {
                 } catch(e) {}
               }
 
+              setTimeout(function() { map.invalidateSize(); }, 100);
               setMapRef(map);
               };
               initMap();
