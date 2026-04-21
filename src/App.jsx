@@ -1839,122 +1839,94 @@ export default function App() {
 
       {/* LIVE BAIT MAP SCREEN */}
       {screen === "map" && (function() {
+        // Use useEffect equivalent via a simple timeout-based init
+        var mapId = "spa-leaflet-map";
         return (
-          <div className="fu" style={{ display: "flex", flexDirection: "column", position: "fixed", top: 56, left: 0, right: 0, bottom: 56, zIndex: 10, background: bgCard }}>
-            <div style={{ padding: "10px 16px 8px", background: bgCard, borderBottom: "1px solid " + border, flexShrink: 0 }}>
+          <div className="fu" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, background: bgCard, display: "flex", flexDirection: "column" }}>
+            {/* Header */}
+            <div style={{ padding: "12px 16px 8px", background: bgCard, borderBottom: "1px solid " + border, flexShrink: 0, paddingTop: 60 }}>
               <div style={{ fontSize: 18, fontWeight: "900", color: textMain, marginBottom: 8 }}>📍 Live <span style={{ color: accent }}>Bait Map</span></div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {[["all","All"], ["baits","🚨 Bait Signs"], ["campsites","🏕️ Campsites"]].map(function(f) {
+              <div style={{ display: "flex", gap: 6 }}>
+                {[["all","All"],["baits","🚨 Baits"],["camps","🏕️ Camps"]].map(function(f) {
                   return <button key={f[0]} onClick={function() { setMapFilter(f[0]); }}
-                    style={{ padding: "5px 12px", borderRadius: 20, border: "1.5px solid " + (mapFilter === f[0] ? accent : border), background: mapFilter === f[0] ? accent : bgCard, color: mapFilter === f[0] ? "white" : textSub, fontSize: 11, fontWeight: "700", cursor: "pointer", fontFamily: "system-ui" }}>
+                    style={{ padding: "5px 12px", borderRadius: 20, border: "1.5px solid " + (mapFilter===f[0] ? accent : border), background: mapFilter===f[0] ? accent : bgCard, color: mapFilter===f[0] ? "white" : textSub, fontSize: 11, fontWeight: "700", cursor: "pointer", fontFamily: "system-ui" }}>
                     {f[1]}
                   </button>;
                 })}
+                <button onClick={function() { var m = document.getElementById(mapId); if(m) m.innerHTML=""; setMapRef(null); setScreen("home"); }}
+                  style={{ marginLeft: "auto", padding: "5px 14px", borderRadius: 20, border: "1.5px solid " + border, background: bgCard, color: accent, fontSize: 11, fontWeight: "700", cursor: "pointer", fontFamily: "system-ui" }}>
+                  ← Back
+                </button>
               </div>
             </div>
 
-            <div id="safepets-map" style={{ flex: 1, width: "100%", minHeight: 0 }} ref={function(el) {
-              if (!el || mapRef) return;
-              var initMap = function() {
-                if (typeof window.L === "undefined") { setTimeout(initMap, 200); return; }
+            {/* Map container */}
+            <div id={mapId} style={{ flex: 1, width: "100%" }}
+              ref={function(el) {
+                if (!el) return;
+                // Clear any existing map
                 if (el._leaflet_id) return;
-                var L = window.L;
-              var map = L.map(el, { zoomControl: true, attributionControl: false }).setView([-25.5, 133.5], 4);
-              L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                maxZoom: 18, attribution: "© OpenStreetMap"
-              }).addTo(map);
+                // Wait for Leaflet
+                var tries = 0;
+                var init = function() {
+                  if (tries++ > 20) return;
+                  if (!window.L) { setTimeout(init, 250); return; }
+                  try {
+                    var L = window.L;
+                    var riskColors = { EXTREME:"#c0392b", HIGH:"#e67e22", MODERATE:"#f39c12", "LOW-MODERATE":"#7daa2d", LOW:"#27ae60" };
+                    var map = L.map(el).setView([-25.5, 133.5], 4);
+                    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:18 }).addTo(map);
+                    setTimeout(function() { map.invalidateSize(); }, 200);
 
-              // ── Risk zone circles ──────────────────────────────────────
-              var riskColors = { EXTREME: "#c0392b", HIGH: "#e67e22", MODERATE: "#f39c12", "LOW-MODERATE": "#7daa2d", LOW: "#27ae60" };
-              RISK_REGIONS.forEach(function(r) {
-                if (mapFilter === "baits") return;
-                L.circle([r.lat, r.lng], {
-                  radius: r.radius * 1000,
-                  color: riskColors[r.risk] || "#888",
-                  fillColor: riskColors[r.risk] || "#888",
-                  fillOpacity: 0.08,
-                  weight: 1.5,
-                  opacity: 0.4
-                }).addTo(map).bindPopup(
-                  "<strong>" + r.name + "</strong><br/><span style='color:" + (riskColors[r.risk]||"#888") + ";font-weight:700'>" + r.risk + " RISK</span><br/><small>" + r.notes.substring(0, 120) + "...</small>"
-                );
-              });
-
-              // ── Campsite markers ──────────────────────────────────────
-              if (mapFilter !== "baits") {
-                var campCoords = {
-                  "WA": [-26.5, 121.0], "QLD": [-22.0, 144.0], "NSW": [-32.0, 146.0],
-                  "VIC": [-36.5, 145.0], "SA": [-30.0, 135.0], "NT": [-19.0, 133.0],
-                  "TAS": [-42.0, 146.5], "ACT": [-35.3, 149.1]
-                };
-                var campIcon = L.divIcon({
-                  html: "<div style='background:" + accent + ";width:10px;height:10px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3)'></div>",
-                  iconSize: [10, 10], className: ""
-                });
-                CAMPSITE_RATINGS.forEach(function(c, idx) {
-                  var base = campCoords[c.state.split("/")[0]] || [-25.5, 133.5];
-                  var jitter = function() { return (Math.random() - 0.5) * 8; };
-                  var lat = base[0] + jitter();
-                  var lng = base[1] + jitter();
-                  var col = riskColors[c.risk] || "#888";
-                  var icon = L.divIcon({
-                    html: "<div style='background:" + col + ";width:10px;height:10px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3)'></div>",
-                    iconSize: [10, 10], className: ""
-                  });
-                  L.marker([lat, lng], { icon: icon }).addTo(map).bindPopup(
-                    "<strong>" + c.name + "</strong><br/>" +
-                    "<span style='color:" + col + ";font-weight:700'>" + c.risk + " RISK</span><br/>" +
-                    "<small>🐕 " + c.dog + "</small><br/>" +
-                    (c.nearestTown ? "<small>📍 " + c.nearestTown + "</small><br/>" : "") +
-                    (c.bestSeason ? "<small>📅 Best: " + c.bestSeason + "</small>" : "")
-                  );
-                });
-              }
-
-              // ── User location ─────────────────────────────────────────
-              if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(pos) {
-                  var userIcon = L.divIcon({
-                    html: "<div style='background:" + accent + ";width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px " + accent + "40'></div>",
-                    iconSize: [14, 14], className: ""
-                  });
-                  L.marker([pos.coords.latitude, pos.coords.longitude], { icon: userIcon })
-                    .addTo(map).bindPopup("<strong>You are here</strong>").openPopup();
-                  map.setView([pos.coords.latitude, pos.coords.longitude], 8);
-                });
-              }
-
-              // ── Community bait report pins ────────────────────────────
-              if (mapFilter !== "campsites") {
-                try {
-                  var reports = JSON.parse(localStorage.getItem("baitReports") || "[]");
-                  reports.forEach(function(r) {
-                    if (!r.lat || !r.lng) return;
-                    var baitIcon = L.divIcon({
-                      html: "<div style='background:#c0392b;color:white;width:22px;height:22px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;box-shadow:0 2px 4px rgba(0,0,0,0.4)'>!</div>",
-                      iconSize: [22, 22], className: ""
+                    // Risk zones
+                    RISK_REGIONS.forEach(function(r) {
+                      L.circle([r.lat, r.lng], { radius:r.radius*1000, color:riskColors[r.risk]||"#888", fillColor:riskColors[r.risk]||"#888", fillOpacity:0.1, weight:1, opacity:0.5 })
+                        .addTo(map).bindPopup("<b>" + r.name + "</b><br><span style='color:" + (riskColors[r.risk]||"#888") + ";font-weight:700'>" + r.risk + " RISK</span><br><small>" + r.notes.slice(0,100) + "...</small>");
                     });
-                    L.marker([r.lat, r.lng], { icon: baitIcon }).addTo(map).bindPopup(
-                      "<strong style='color:#c0392b'>⚠️ Bait Sign Reported</strong><br/>" +
-                      "<strong>" + r.place + "</strong><br/>" +
-                      "<small>" + r.time + "</small>" +
-                      (r.note ? "<br/><small>" + r.note + "</small>" : "")
-                    );
-                  });
-                } catch(e) {}
-              }
 
-              setTimeout(function() { map.invalidateSize(); }, 100);
-              setMapRef(map);
-              };
-              initMap();
-            }} />
+                    // Campsite markers
+                    var stateOffsets = { WA:[-26.5,121], QLD:[-22,144], NSW:[-32,146], VIC:[-36.5,145], SA:[-30,135], NT:[-19,133], TAS:[-42,146.5], ACT:[-35.3,149.1] };
+                    CAMPSITE_RATINGS.forEach(function(c) {
+                      var base = stateOffsets[c.state.split("/")[0]] || [-25.5,133.5];
+                      var lat = base[0] + (Math.random()-0.5)*9;
+                      var lng = base[1] + (Math.random()-0.5)*9;
+                      var col = riskColors[c.risk] || "#888";
+                      var icon = L.divIcon({ html:"<div style='background:"+col+";width:10px;height:10px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4)'></div>", iconSize:[10,10], className:"" });
+                      L.marker([lat,lng],{icon:icon}).addTo(map).bindPopup("<b>" + c.name + "</b><br><span style='color:"+col+";font-weight:700'>" + c.risk + "</span><br><small>🐕 " + c.dog + "</small>" + (c.nearestTown?"<br><small>📍 "+c.nearestTown+"</small>":""));
+                    });
 
-            <div style={{ padding: "8px 16px", background: bgCard, borderTop: "1px solid " + border, display: "flex", gap: 16, fontSize: 10, color: textLight }}>
-              <span><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#c0392b", marginRight: 4 }} />Bait reports</span>
-              <span><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: accent, marginRight: 4 }} />Campsites</span>
-              <span><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#e67e22", marginRight: 4, opacity: 0.5 }} />Risk zones</span>
-              <span style={{ marginLeft: "auto" }}><button onClick={function() { setMapRef(null); setScreen("home"); }} style={{ background: "none", border: "none", color: accent, fontWeight: "700", cursor: "pointer", fontSize: 11 }}>← Back</button></span>
+                    // User location
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(function(pos) {
+                        var icon = L.divIcon({ html:"<div style='background:"+accent+";width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px "+accent+"50'></div>", iconSize:[16,16], className:"" });
+                        L.marker([pos.coords.latitude, pos.coords.longitude], {icon:icon}).addTo(map).bindPopup("<b>You are here</b>").openPopup();
+                        map.setView([pos.coords.latitude, pos.coords.longitude], 8);
+                      }, function(){});
+                    }
+
+                    // Bait reports
+                    try {
+                      var reports = JSON.parse(localStorage.getItem("baitReports")||"[]");
+                      reports.forEach(function(r) {
+                        if (!r.lat||!r.lng) return;
+                        var icon = L.divIcon({ html:"<div style='background:#c0392b;color:white;width:24px;height:24px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;box-shadow:0 2px 4px rgba(0,0,0,0.4)'>!</div>", iconSize:[24,24], className:"" });
+                        L.marker([r.lat,r.lng],{icon:icon}).addTo(map).bindPopup("<b style='color:#c0392b'>⚠️ Bait Reported</b><br><b>"+r.place+"</b><br><small>"+r.time+"</small>"+(r.note?"<br><small>"+r.note+"</small>":""));
+                      });
+                    } catch(e) {}
+
+                    setMapRef(map);
+                  } catch(err) { console.error("Map init error:", err); }
+                };
+                setTimeout(init, 100);
+              }}
+            />
+
+            {/* Legend */}
+            <div style={{ padding:"8px 16px", background:bgCard, borderTop:"1px solid "+border, display:"flex", gap:14, fontSize:10, color:textLight, flexShrink:0 }}>
+              <span><span style={{ display:"inline-block", width:8, height:8, borderRadius:"50%", background:"#c0392b", marginRight:4 }}/>Bait reports</span>
+              <span><span style={{ display:"inline-block", width:8, height:8, borderRadius:"50%", background:accent, marginRight:4 }}/>Your location</span>
+              <span><span style={{ display:"inline-block", width:8, height:8, borderRadius:"50%", background:"#e67e22", marginRight:4, opacity:0.6 }}/>Risk zones</span>
+              <span><span style={{ display:"inline-block", width:8, height:8, borderRadius:"50%", background:"#888", marginRight:4 }}/>Campsites</span>
             </div>
           </div>
         );
