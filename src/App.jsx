@@ -622,25 +622,52 @@ export default function App() {
               <div style={{ fontSize: 48, position: "relative", zIndex: 1 }}>🐾</div>
             </div>
 
-            <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 10 }}>
-              <Btn primary onClick={function() { setScreen("disclaimer"); }}>Check My 1080 Location Risk</Btn>
-              <Btn onClick={function() { setSymptomStep(0); setSymptomAnswers([]); setScreen("symptom"); }}>Emergency Symptom Checker</Btn>
-              <Btn onClick={function() { setScreen("firstaid"); }}>1080 First Aid Guide</Btn>
-              <Btn onClick={function() { setScreen("snakes"); }}>Snake Risk and ID</Btn>
-              <Btn onClick={function() { setScreen("campsites"); }}>Campsite Safety Ratings</Btn>
-              <Btn onClick={function() { setScreen("route"); }}>Check Route Risk</Btn>
-              <Btn onClick={function() { setScreen("map"); }}>Official Baiting Maps</Btn>
-              <Btn onClick={function() { setScreen("canetoad"); }}>Cane Toads</Btn>
-              <Btn onClick={function() { setScreen("seaanimals"); }}>Sea Hares</Btn>
-              <Btn onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }}>Blue-Green Algae</Btn>
-              <Btn onClick={function() { setScreen("report"); }}>Report a Bait Sign</Btn>
-              <Btn onClick={function() { setScreen("areasearch"); }}>Area Search</Btn>
-              {petProfile
-                ? <Btn onClick={function() { setPetForm(petProfile); setScreen("petprofile"); }}>Edit Pet Profile</Btn>
-                : <Btn onClick={function() { setPetForm({ name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" }); setScreen("petprofile"); }}>Add Pet Profile</Btn>
-              }
-              <Btn onClick={function() { setScreen("saved"); }}>Saved Locations</Btn>
-              <Btn onClick={function() { setScreen("upgrade"); }}>{isPro ? "Pro — Active" : "Upgrade to Pro"}</Btn>
+            <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 16 }}>
+
+              {/* RISK TOOLS */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: "700", color: textLight, letterSpacing: "0.15em", textTransform: "uppercase" }}>Risk Tools</div>
+                <Btn primary onClick={function() { setScreen("disclaimer"); }}>Check My 1080 Location Risk</Btn>
+                <Btn onClick={function() { setSymptomStep(0); setSymptomAnswers([]); setScreen("symptom"); }}>Emergency Symptom Checker</Btn>
+                <Btn onClick={function() { setScreen("firstaid"); }}>1080 First Aid Guide</Btn>
+              </div>
+
+              {/* HAZARDS */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: "700", color: textLight, letterSpacing: "0.15em", textTransform: "uppercase" }}>Hazards</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <Btn onClick={function() { setScreen("snakes"); }}>Snakes</Btn>
+                  <Btn onClick={function() { setScreen("canetoad"); }}>Cane Toads</Btn>
+                  <Btn onClick={function() { setScreen("seaanimals"); }}>Sea Hares</Btn>
+                  <Btn onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }}>Blue-Green Algae</Btn>
+                </div>
+              </div>
+
+              {/* PLAN YOUR TRIP */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: "700", color: textLight, letterSpacing: "0.15em", textTransform: "uppercase" }}>Plan Your Trip</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <Btn onClick={function() { setScreen("campsites"); }}>Campsites</Btn>
+                  <Btn onClick={function() { setScreen("route"); }}>Route Risk</Btn>
+                  <Btn onClick={function() { setScreen("map"); }}>Baiting Maps</Btn>
+                  <Btn onClick={function() { setScreen("areasearch"); }}>Area Search</Btn>
+                </div>
+              </div>
+
+              {/* MORE */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: "700", color: textLight, letterSpacing: "0.15em", textTransform: "uppercase" }}>More</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <Btn onClick={function() { setScreen("report"); }}>Report Bait Sign</Btn>
+                  {petProfile
+                    ? <Btn onClick={function() { setPetForm(petProfile); setScreen("petprofile"); }}>Edit Pet Profile</Btn>
+                    : <Btn onClick={function() { setPetForm({ name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" }); setScreen("petprofile"); }}>Add Pet Profile</Btn>
+                  }
+                  <Btn onClick={function() { setScreen("saved"); }}>Saved Locations</Btn>
+                  <Btn onClick={function() { setScreen("upgrade"); }}>{isPro ? "Pro — Active" : "Upgrade to Pro"}</Btn>
+                </div>
+              </div>
+
             </div>
 
             {!isOnline && (
