@@ -4,6 +4,18 @@ import { CAMPSITE_RATINGS } from "./data/campsiteData.js";
 import { SNAKE_REGIONS, SNAKE_SPECIES } from "./data/snakeData.js";
 import { HAZARDS } from "./data/hazardData.js";
 
+// Load Leaflet dynamically if not already loaded
+if (typeof window !== "undefined" && !window._leafletLoaded) {
+  window._leafletLoaded = true;
+  var leafCSS = document.createElement("link");
+  leafCSS.rel = "stylesheet";
+  leafCSS.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+  document.head.appendChild(leafCSS);
+  var leafJS = document.createElement("script");
+  leafJS.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+  document.head.appendChild(leafJS);
+}
+
 const DISCLAIMER = "This app provides general risk guidance only. It is based on publicly available information about 1080 baiting programs in Australia. It does NOT provide real-time baiting data. Always check with local councils and national parks. Emergency: Animal Poisons Helpline 1300 869 738.";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
