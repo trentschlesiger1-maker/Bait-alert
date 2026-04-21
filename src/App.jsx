@@ -558,31 +558,7 @@ export default function App() {
     return <button style={style} onClick={props.onClick}>{props.children}</button>;
   }
 
-  function NavBar() {
-    var tabs = [
-      { id: "home", label: "Home", icon: "🏠" },
-      { id: "symptom", label: "Emergency", icon: "🚨" },
-      { id: "snakes", label: "Snakes", icon: "🐍" },
-      { id: "saved", label: "Saved", icon: "📍" },
-      { id: "more", label: "More", icon: "☰" },
-    ];
-    return (
-      <div style={{ background: bgCard, borderTop: "1px solid " + border, display: "flex", padding: "8px 0 4px" }}>
-        {tabs.map(function(t) {
-          return (
-            <button key={t.id} onClick={function() {
-              if (t.id === "symptom") { setSymptomStep(0); setSymptomAnswers([]); }
-              if (t.id === "hazards") { setSelectedHazard(null); }
-              setScreen(t.id);
-            }} style={{ flex: 1, background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "4px 0" }}>
-              <span style={{ fontSize: 18 }}>{t.icon}</span>
-              <span style={{ fontSize: 9, color: screen === t.id ? accent : textLight, fontWeight: screen === t.id ? "700" : "400", fontFamily: "system-ui" }}>{t.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
+
 
   return (
     <div style={{ minHeight: "100vh", background: bg, color: textMain, fontFamily: "system-ui, -apple-system, sans-serif", display: "flex", flexDirection: "column" }}>
@@ -647,37 +623,24 @@ export default function App() {
             </div>
 
             <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 10 }}>
-              <Btn primary onClick={function() { setScreen("disclaimer"); }}>📍 Check My 1080 Location Risk</Btn>
-              <Btn onClick={function() { setScreen("route"); }}>🗺️ Check Route Risk</Btn>
-              <Btn onClick={function() { setScreen("map"); }}>🗺️ Official Baiting Maps</Btn>
-              <Btn onClick={function() { setScreen("campsites"); }}>🏕️ Campsite Safety Ratings</Btn>
-
-              {/* Individual hazard cards */}
-              <button onClick={function() { setScreen("canetoad"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 10, padding: "13px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Cane Toads</div>
-                  <div style={{ fontSize: 11, color: textLight }}>QLD · NT · Northern NSW · WA</div>
-                </div>
-                <span style={{ color: textLight, fontSize: 16 }}>›</span>
-              </button>
-
-              <button onClick={function() { setScreen("seaanimals"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 10, padding: "13px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Sea Hares</div>
-                  <div style={{ fontSize: 11, color: textLight }}>Sea hares · Coastal beach hazards</div>
-                </div>
-                <span style={{ color: textLight, fontSize: 16 }}>›</span>
-              </button>
-
-              <button onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }} style={{ width: "100%", background: bgCard, border: "1.5px solid " + border, borderRadius: 10, padding: "13px 16px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "system-ui, -apple-system, sans-serif" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: "800", color: textMain }}>Blue-Green Algae</div>
-                  <div style={{ fontSize: 11, color: textLight }}>Freshwater lakes · Rivers · Dams</div>
-                </div>
-                <span style={{ color: textLight, fontSize: 16 }}>›</span>
-              </button>
-
-              {!petProfile && <Btn onClick={function() { setPetForm({ name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" }); setScreen("petprofile"); }}>🐶 Add Pet Profile</Btn>}
+              <Btn primary onClick={function() { setScreen("disclaimer"); }}>Check My 1080 Location Risk</Btn>
+              <Btn onClick={function() { setSymptomStep(0); setSymptomAnswers([]); setScreen("symptom"); }}>Emergency Symptom Checker</Btn>
+              <Btn onClick={function() { setScreen("firstaid"); }}>1080 First Aid Guide</Btn>
+              <Btn onClick={function() { setScreen("snakes"); }}>Snake Risk and ID</Btn>
+              <Btn onClick={function() { setScreen("campsites"); }}>Campsite Safety Ratings</Btn>
+              <Btn onClick={function() { setScreen("route"); }}>Check Route Risk</Btn>
+              <Btn onClick={function() { setScreen("map"); }}>Official Baiting Maps</Btn>
+              <Btn onClick={function() { setScreen("canetoad"); }}>Cane Toads</Btn>
+              <Btn onClick={function() { setScreen("seaanimals"); }}>Sea Hares</Btn>
+              <Btn onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }}>Blue-Green Algae</Btn>
+              <Btn onClick={function() { setScreen("report"); }}>Report a Bait Sign</Btn>
+              <Btn onClick={function() { setScreen("areasearch"); }}>Area Search</Btn>
+              {petProfile
+                ? <Btn onClick={function() { setPetForm(petProfile); setScreen("petprofile"); }}>Edit Pet Profile</Btn>
+                : <Btn onClick={function() { setPetForm({ name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" }); setScreen("petprofile"); }}>Add Pet Profile</Btn>
+              }
+              <Btn onClick={function() { setScreen("saved"); }}>Saved Locations</Btn>
+              <Btn onClick={function() { setScreen("upgrade"); }}>{isPro ? "Pro — Active" : "Upgrade to Pro"}</Btn>
             </div>
 
             {!isOnline && (
@@ -690,7 +653,7 @@ export default function App() {
 
         {/* DISCLAIMER */}
         {screen === "disclaimer" && (
-          <div className="fu" style={{ padding: "24px 20px 48px" }}>
+          <div className="fu" style={{ padding: "24px 20px 24px" }}>
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ background: "#fdecea", border: "1px solid #f5b7b1", borderRadius: 12, padding: 18 }}>
                 <div style={{ fontSize: 15, fontWeight: "800", color: accent, marginBottom: 10 }}>⚠ Important Disclaimer</div>
@@ -864,7 +827,7 @@ export default function App() {
           var currentStep = isEmergencyState ? null : (steps[symptomStep] || null);
           var isComplete = !isEmergencyState && symptomStep >= steps.length;
           return (
-          <div className="fu" style={{ padding: "20px 16px 48px" }}>
+          <div className="fu" style={{ padding: "20px 16px 24px" }}>
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🚨 Symptom <span style={{ color: accent }}>Checker</span></div>
 
@@ -1016,7 +979,7 @@ export default function App() {
 
         {/* FIRST AID */}
         {screen === "firstaid" && (
-          <div className="fu" style={{ padding: "24px 20px 48px" }}>
+          <div className="fu" style={{ padding: "24px 20px 24px" }}>
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>💊 <span style={{ color: accent }}>1080 First Aid</span></div>
               <div style={{ background: "#fdecea", border: "1px solid #f5b7b1", borderRadius: 10, padding: 12 }}>
@@ -1087,7 +1050,7 @@ export default function App() {
 
         {/* SAVED LOCATIONS */}
         {screen === "saved" && (
-          <div className="fu" style={{ padding: "24px 20px 48px" }}>
+          <div className="fu" style={{ padding: "24px 20px 24px" }}>
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>📍 Saved <span style={{ color: accent }}>Locations</span></div>
               {savedLocations.length === 0 && (
@@ -1113,7 +1076,7 @@ export default function App() {
 
         {/* MORE */}
         {screen === "more" && (
-          <div className="fu" style={{ padding: "24px 20px 48px" }}>
+          <div className="fu" style={{ padding: "24px 20px 24px" }}>
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>More</div>
               {[
@@ -1236,7 +1199,7 @@ export default function App() {
 
         {/* ROUTE RISK */}
         {screen === "route" && (
-          <div className="fu" style={{ padding: "24px 20px 48px" }}>
+          <div className="fu" style={{ padding: "24px 20px 24px" }}>
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
               <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🗺️ Route <span style={{ color: accent }}>Risk Checker</span></div>
               <div style={{ ...card, fontSize: 12, color: textLight, lineHeight: 1.6 }}>Works offline. Enter major Australian town names — e.g. Perth, Broome, Darwin, Alice Springs, Cairns.</div>
@@ -1641,7 +1604,7 @@ export default function App() {
 
         {/* INFO */}
         {screen === "info" && (
-          <div className="fu" style={{ padding: "24px 20px 48px" }}>
+          <div className="fu" style={{ padding: "24px 20px 24px" }}>
             <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>About <span style={{ color: accent }}>1080 Baits</span></div>
               {[
@@ -1674,7 +1637,7 @@ export default function App() {
 
       {/* HAZARDS HUB */}
       {screen === "hazards" && (
-        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+        <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>Pet <span style={{ color: accent }}>Hazards</span></div>
             <div style={{ fontSize: 13, color: textLight, lineHeight: 1.6 }}>These hazards kill Australian dogs every year. Tap each one to learn the signs, first aid and how to stay safe.</div>
@@ -1715,7 +1678,7 @@ export default function App() {
 
       {/* CANE TOAD SCREEN */}
       {screen === "canetoad" && (
-        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+        <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
             <button onClick={function() { setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>Cane <span style={{ color: accent }}>Toads</span></div>
@@ -1760,7 +1723,7 @@ export default function App() {
 
       {/* SEA ANIMALS SCREEN */}
       {screen === "seaanimals" && (
-        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+        <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
             <button onClick={function() { setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>Sea <span style={{ color: accent }}>Hares</span></div>
@@ -1808,7 +1771,7 @@ export default function App() {
 
       {/* HAZARD DETAIL — Blue-Green Algae */}
       {screen === "hazarddetail" && selectedHazard && (
-        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+        <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
             <button onClick={function() { setSelectedHazard(null); setScreen("hazards"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back to Hazards</button>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>{selectedHazard.icon} {selectedHazard.name}</div>
@@ -1864,7 +1827,7 @@ export default function App() {
 
       {/* USEFUL LINKS SCREEN */}
       {screen === "map" && (
-        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+        <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🗺️ Official <span style={{ color: accent }}>Baiting Maps</span></div>
             <div style={{ fontSize: 13, color: textLight, lineHeight: 1.6 }}>These are the official government interactive maps for each state. Always check these before heading into the bush with your dog.</div>
@@ -1974,7 +1937,7 @@ export default function App() {
 
       {/* PRO UPGRADE SCREEN */}
       {screen === "upgrade" && (
-        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+        <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>⭐ Safe Pets <span style={{ color: accent }}>Pro</span></div>
             <div style={{ ...card, background: "linear-gradient(135deg, " + accent + "15, " + accent + "05)", border: "2px solid " + accent }}>
@@ -2026,7 +1989,7 @@ export default function App() {
 
       {/* AREA SEARCH SCREEN — Pro feature */}
       {screen === "areasearch" && (
-        <div className="fu" style={{ padding: "20px 16px 48px" }}>
+        <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🔍 Area <span style={{ color: accent }}>Search</span></div>
             {!isPro ? (
@@ -2097,8 +2060,7 @@ export default function App() {
       )}
 
       {/* BOTTOM NAV — show on main screens */}
-      {["home","symptom","firstaid","saved","more","snakes","snakeid","snakefirstaid","report","hazards","upgrade","areasearch","canetoad","seaanimals","map"].includes(screen) && <NavBar />}
+      
     </div>
   );
 }
-
