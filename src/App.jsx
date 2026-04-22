@@ -4,6 +4,15 @@ import { CAMPSITE_RATINGS } from "./data/campsiteData.js";
 import { SNAKE_REGIONS, SNAKE_SPECIES } from "./data/snakeData.js";
 import { HAZARDS } from "./data/hazardData.js";
 
+// Register service worker for offline mode
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("/sw.js").catch(function(err) {
+      console.log("SW registration failed:", err);
+    });
+  });
+}
+
 // Load Leaflet dynamically if not already loaded
 if (typeof window !== "undefined" && !window._leafletLoaded) {
   window._leafletLoaded = true;
@@ -231,15 +240,23 @@ async function fetchNearbyVets(lat, lng) {
   }
 }
 
-function requestNotification(risk) {
+function requestNotification(risk, placeName) {
   if (!("Notification" in window)) return;
+  var body = risk + " 1080 risk zone detected" + (placeName ? " near " + placeName : "") + ". Keep your dog on a lead. Consider a basket muzzle. Never let your dog eat anything off the ground.";
+  var opts = { body: body, icon: "/vite.svg", badge: "/vite.svg", tag: "risk-alert", requireInteraction: risk === "EXTREME" };
   if (Notification.permission === "granted") {
-    new Notification("Safe Pets Australia", { body: risk + " risk zone detected. Keep your dog on a lead and stay alert." });
+    new Notification("⚠️ Safe Pets Australia Alert", opts);
   } else if (Notification.permission !== "denied") {
     Notification.requestPermission().then(function(p) {
-      if (p === "granted") new Notification("Safe Pets Australia", { body: risk + " risk zone. Keep your dog on a lead." });
+      if (p === "granted") new Notification("⚠️ Safe Pets Australia Alert", opts);
     });
   }
+}
+
+function enableNotifications(callback) {
+  if (!("Notification" in window)) { callback && callback("unsupported"); return; }
+  if (Notification.permission === "granted") { callback && callback("granted"); return; }
+  Notification.requestPermission().then(function(p) { callback && callback(p); });
 }
 
 function getSeasonalWarning() {
@@ -420,7 +437,7 @@ export default function App() {
         setAssessment(result);
         setScreen("result");
         if (result && (result.risk === "HIGH" || result.risk === "EXTREME")) {
-          requestNotification(result.risk);
+          requestNotification(result.risk, placeName);
           setNotifPerm("Notification" in window ? Notification.permission : "unsupported");
         }
         if (navigator.onLine) {
@@ -703,7 +720,7 @@ export default function App() {
 
             {!isOnline && (
               <div style={{ background: "#fff8e1", border: "1px solid #ffe082", borderRadius: 10, padding: "10px 16px", fontSize: 12, color: "#7a5800", maxWidth: 360, textAlign: "center", lineHeight: 1.6 }}>
-                📵 Offline — core risk assessment still works. AI analysis needs signal.
+                📵 <strong>Offline mode</strong> — symptom checker, first aid, campsites and snake guide all work without internet. Vet finder and AI search need signal.
               </div>
             )}
           </div>
@@ -2037,11 +2054,12 @@ export default function App() {
               {[
                 ["🏕️", "Full Campsite Database", "118+ campsite safety ratings with dog policies, nearest town, remoteness and best season"],
                 ["🐍", "Full Snake ID Guide", "All 10 species with photos, behaviour notes and dog-specific risk information"],
-                ["🗺️", "Route Risk Checker", "Check 1080 risk along your full driving route with visual map"],
+                ["🗺️", "Route Risk Checker", "Check 1080 risk along your full driving route with visual map and PDF export"],
                 ["🐶", "Pet Profile", "Save your dog's details, microchip number, vet contacts and medical notes"],
                 ["🔍", "AI Area Search", "Type any Australian location — get a full AI-generated safety briefing"],
                 ["📄", "Trip Safety Report", "Export a full trip safety report as a downloadable file"],
                 ["🔔", "Risk Zone Alerts", "Push notifications when you enter HIGH or EXTREME risk areas"],
+                ["📵", "Offline Mode", "Core app works without internet — first aid, campsites, symptom checker always available"],
               ].map(function(f, i) {
                 return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "flex-start" }}>
                   <div style={{ fontSize: 20, flexShrink: 0 }}>{f[0]}</div>
@@ -2052,6 +2070,19 @@ export default function App() {
                 </div>;
               })}
             </div>
+              {isPro && notifPerm !== "granted" && notifPerm !== "unsupported" && (
+                <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+                  <div style={{ fontSize: 13, fontWeight: "800", color: textMain, marginBottom: 6 }}>🔔 Enable Risk Zone Alerts</div>
+                  <div style={{ fontSize: 12, color: textLight, marginBottom: 10, lineHeight: 1.6 }}>Get notified when you enter HIGH or EXTREME 1080 risk zones.</div>
+                  <Btn primary onClick={function() { enableNotifications(function(p) { setNotifPerm(p); }); }}>Enable Notifications</Btn>
+                </div>
+              )}
+              {isPro && notifPerm === "granted" && (
+                <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+                  <div style={{ fontSize: 13, fontWeight: "800", color: accent }}>🔔 Risk zone alerts are enabled ✓</div>
+                  <div style={{ fontSize: 12, color: textLight, marginTop: 4 }}>You will be notified when you enter HIGH or EXTREME risk areas.</div>
+                </div>
+              )}
             <Btn onClick={function() { setScreen("home"); }}>← Maybe later</Btn>
           </div>
         </div>
