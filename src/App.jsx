@@ -182,22 +182,53 @@ async function reverseGeocode(lat, lng) {
 
 async function fetchNearbyVets(lat, lng) {
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 800,
-        system: "Return ONLY a valid JSON array, no other text or markdown.",
-        messages: [{ role: "user", content: "List the 3 nearest veterinary clinics to lat " + lat.toFixed(3) + " lng " + lng.toFixed(3) + " Australia. Return ONLY JSON array: [{\"name\":\"string\",\"address\":\"string\",\"phone\":\"string or null\",\"hours\":\"string or null\"}]" }]
-      })
+    // Use Overpass API (OpenStreetMap) — completely free, no key needed
+    // Try progressively wider radii for remote areas
+    var radii = [50000, 150000, 300000, 500000, 1000000]; // 50, 150, 300, 500, 1000km
+    var data = null;
+    for (var r = 0; r < radii.length; r++) {
+      var radius = radii[r];
+      var query = '[out:json][timeout:25];(node["amenity"="veterinary"](around:' + radius + ',' + lat + ',' + lng + ');way["amenity"="veterinary"](around:' + radius + ',' + lat + ',' + lng + '););out body center 8;';
+      var res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: "data=" + encodeURIComponent(query)
+      });
+      data = await res.json();
+      if (data.elements && data.elements.length >= 2) break;
+    }
+    if (!data || !data.elements || data.elements.length === 0) return [];
+    // Calculate distance and sort
+    function distKm(a, b, c, d) {
+      var R = 6371;
+      var dLat = (c - a) * Math.PI / 180;
+      var dLon = (d - b) * Math.PI / 180;
+      var x = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(a*Math.PI/180) * Math.cos(c*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+    }
+    var vets = data.elements.map(function(el) {
+      var elLat = el.lat || (el.center && el.center.lat);
+      var elLng = el.lon || (el.center && el.center.lon);
+      var dist = distKm(lat, lng, elLat, elLng);
+      var tags = el.tags || {};
+      var distStr = dist < 1 ? (dist * 1000).toFixed(0) + "m" : dist < 100 ? dist.toFixed(1) + "km" : Math.round(dist) + "km";
+      var addrParts = [tags["addr:housenumber"], tags["addr:street"], tags["addr:suburb"] || tags["addr:city"]].filter(Boolean);
+      return {
+        name: tags.name || tags["operator"] || "Veterinary Clinic",
+        address: addrParts.length > 0 ? addrParts.join(" ") : (tags["addr:suburb"] || tags["addr:city"] || tags["addr:town"] || ""),
+        phone: tags.phone || tags["contact:phone"] || null,
+        hours: tags.opening_hours || null,
+        distance: distStr,
+        distKm: dist,
+        lat: elLat,
+        lng: elLng
+      };
     });
-    const data = await res.json();
-    const block = data.content && data.content.find(function(b) { return b.type === "text"; });
-    if (!block) return null;
-    const clean = block.text.replace(/```json|```/g, "").trim();
-    return JSON.parse(clean);
-  } catch { return null; }
+    vets.sort(function(a, b) { return a.distKm - b.distKm; });
+    return vets.slice(0, 3);
+  } catch(e) {
+    console.error("Vet fetch error:", e);
+    return null;
+  }
 }
 
 function requestNotification(risk) {
@@ -1929,64 +1960,60 @@ export default function App() {
       )}
 
       {/* HAZARD DETAIL — Blue-Green Algae */}
-            {screen === "hazarddetail" && (
-        <div className="fu" style={{ padding: "20px 16px 24px" }}>
-          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
-            {(function() {
-              var h = selectedHazard || HAZARDS.find(function(x) { return x.id === "algae"; });
-              if (!h) return null;
-              return (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <button onClick={function() { setSelectedHazard(null); setScreen("home"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back</button>
-                  <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>{h.name}</div>
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Blue_green_algae_in_a_lake.jpg/320px-Blue_green_algae_in_a_lake.jpg"
-                    alt="Blue-Green Algae" style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover" }}
-                    onError={function(e) { e.target.style.display="none"; }} />
-                  <div style={{ ...card, borderLeft: "4px solid " + h.color }}>
-                    <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Where Found</div>
-                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.where}</div>
-                  </div>
-                  <div style={card}>
-                    <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Peak Season</div>
-                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.season}</div>
-                  </div>
-                  <div style={card}>
-                    <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>What It Looks Like</div>
-                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.appearance}</div>
-                  </div>
-                  <div style={card}>
-                    <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Why It Is Dangerous</div>
-                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.danger}</div>
-                  </div>
-                  <div style={{ ...card, borderLeft: "4px solid #e74c3c" }}>
-                    <div style={{ fontSize: 11, fontWeight: "800", color: "#e74c3c", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>⚠️ Symptoms</div>
-                    {h.symptoms.map(function(s, i) {
-                      return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e74c3c", marginTop: 5, flexShrink: 0 }} />
-                        <div style={{ fontSize: 13, color: textSub, lineHeight: 1.5 }}>{s}</div>
-                      </div>;
-                    })}
-                  </div>
-                  <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
-                    <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 First Aid</div>
-                    {h.firstAid.map(function(s, i) {
-                      return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 7 }}>
-                        <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#e65100", color: "white", fontSize: 11, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i+1}</div>
-                        <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.6 }}>{s}</div>
-                      </div>;
-                    })}
-                  </div>
-                  <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
-                    <div style={{ fontSize: 11, fontWeight: "800", color: accent, marginBottom: 6 }}>💡 Prevention</div>
-                    <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{h.tips}</div>
-                  </div>
-                  <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "14px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 Emergency: 1300 869 738</a>
+        {screen === "hazarddetail" && (function() {
+          var h = selectedHazard || HAZARDS.find(function(x) { return x.id === "algae"; });
+          if (!h) return null;
+          return (
+            <div className="fu" style={{ padding: "20px 16px 24px" }}>
+              <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+                <button onClick={function() { setSelectedHazard(null); setScreen("home"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back</button>
+                <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>{h.name}</div>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Blue_green_algae_in_a_lake.jpg/320px-Blue_green_algae_in_a_lake.jpg"
+                  alt="Blue-Green Algae" style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover" }}
+                  onError={function(e) { e.target.style.display="none"; }} />
+                <div style={{ ...card, borderLeft: "4px solid " + h.color }}>
+                  <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Where Found</div>
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.where}</div>
                 </div>
-              );
-            })()}
-          </div>
-        </div>
-      )}
+                <div style={card}>
+                  <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Peak Season</div>
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.season}</div>
+                </div>
+                <div style={card}>
+                  <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>What It Looks Like</div>
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.appearance}</div>
+                </div>
+                <div style={card}>
+                  <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Why It Is Dangerous</div>
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.danger}</div>
+                </div>
+                <div style={{ ...card, borderLeft: "4px solid #e74c3c" }}>
+                  <div style={{ fontSize: 11, fontWeight: "800", color: "#e74c3c", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>⚠️ Symptoms</div>
+                  {h.symptoms.map(function(s, i) {
+                    return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e74c3c", marginTop: 5, flexShrink: 0 }} />
+                      <div style={{ fontSize: 13, color: textSub, lineHeight: 1.5 }}>{s}</div>
+                    </div>;
+                  })}
+                </div>
+                <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
+                  <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 First Aid</div>
+                  {h.firstAid.map(function(s, i) {
+                    return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 7 }}>
+                      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#e65100", color: "white", fontSize: 11, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i+1}</div>
+                      <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.6 }}>{s}</div>
+                    </div>;
+                  })}
+                </div>
+                <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+                  <div style={{ fontSize: 11, fontWeight: "800", color: accent, marginBottom: 6 }}>💡 Prevention</div>
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{h.tips}</div>
+                </div>
+                <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "14px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 Emergency: 1300 869 738</a>
+              </div>
+            </div>
+          );
+        })()}
 
 {/* PRO UPGRADE SCREEN */}
       {screen === "upgrade" && (
