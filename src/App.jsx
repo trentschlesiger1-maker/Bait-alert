@@ -687,7 +687,7 @@ export default function App() {
                   <Btn onClick={function() { setScreen("snakes"); }}>Snakes</Btn>
                   <Btn onClick={function() { setScreen("canetoad"); }}>Cane Toads</Btn>
                   <Btn onClick={function() { setScreen("seaanimals"); }}>Sea Hares</Btn>
-                  <Btn onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }}>Blue-Green Algae</Btn>
+                  <Btn onClick={function() { setScreen("algae"); }}>Blue-Green Algae</Btn>
                 </div>
               </div>
 
@@ -1864,7 +1864,7 @@ export default function App() {
               </div>
               <div style={{ fontSize: 20, color: textLight }}>›</div>
             </button>
-            <button onClick={function() { setSelectedHazard(HAZARDS.find(function(h) { return h.id === "algae"; })); setScreen("hazarddetail"); }} style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid #27ae60" }}>
+            <button onClick={function() { setScreen("algae"); }} style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid #27ae60" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>Blue-Green Algae</div>
                 <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>Freshwater lakes, rivers and dams</div>
@@ -1975,61 +1975,57 @@ export default function App() {
         </div>
       )}
 
-      {/* HAZARD DETAIL — Blue-Green Algae */}
-      {screen === "hazarddetail" && (function() {
-          var h = selectedHazard || HAZARDS.find(function(x) { return x.id === "algae"; });
-          if (!h) return null;
-          return (
-            <div className="fu" style={{ padding: "20px 16px 24px" }}>
-              <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
-                <button onClick={function() { setSelectedHazard(null); setScreen("home"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back</button>
-                <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>{h.name}</div>
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Blue_green_algae_in_a_lake.jpg/320px-Blue_green_algae_in_a_lake.jpg"
-                  alt="Blue-Green Algae" style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover" }}
-                  onError={function(e) { e.target.style.display="none"; }} />
-                <div style={{ ...card, borderLeft: "4px solid " + h.color }}>
-                  <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Where Found</div>
-                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.where}</div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Peak Season</div>
-                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.season}</div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>What It Looks Like</div>
-                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.appearance}</div>
-                </div>
-                <div style={card}>
-                  <div style={{ fontSize: 11, color: textLight, fontWeight: "700", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>Why It Is Dangerous</div>
-                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.6 }}>{h.danger}</div>
-                </div>
-                <div style={{ ...card, borderLeft: "4px solid #e74c3c" }}>
-                  <div style={{ fontSize: 11, fontWeight: "800", color: "#e74c3c", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>⚠️ Symptoms</div>
-                  {h.symptoms.map(function(s, i) {
-                    return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e74c3c", marginTop: 5, flexShrink: 0 }} />
-                      <div style={{ fontSize: 13, color: textSub, lineHeight: 1.5 }}>{s}</div>
-                    </div>;
-                  })}
-                </div>
-                <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
-                  <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 First Aid</div>
-                  {h.firstAid.map(function(s, i) {
-                    return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 7 }}>
-                      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#e65100", color: "white", fontSize: 11, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i+1}</div>
-                      <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.6 }}>{s}</div>
-                    </div>;
-                  })}
-                </div>
-                <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
-                  <div style={{ fontSize: 11, fontWeight: "800", color: accent, marginBottom: 6 }}>💡 Prevention</div>
-                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{h.tips}</div>
-                </div>
-                <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "14px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 Emergency: 1300 869 738</a>
-              </div>
+      {/* BLUE-GREEN ALGAE SCREEN */}
+      {screen === "algae" && (
+        <div className="fu" style={{ padding: "20px 16px 24px" }}>
+          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+            <button onClick={function() { setScreen("home"); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontSize: 14, fontWeight: "700", textAlign: "left", padding: 0 }}>← Back</button>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>Blue-Green <span style={{ color: accent }}>Algae</span></div>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Blue_green_algae_in_a_lake.jpg/320px-Blue_green_algae_in_a_lake.jpg"
+              alt="Blue-Green Algae" style={{ width: "100%", borderRadius: 12, maxHeight: 200, objectFit: "cover" }}
+              onError={function(e) { e.target.style.display = "none"; }} />
+            <div style={{ ...card, background: "#e8f5e9", border: "1.5px solid #27ae60" }}>
+              <div style={{ fontSize: 13, fontWeight: "800", color: "#1b5e20", marginBottom: 4 }}>⚠️ EXTREME RISK — Can kill a dog within hours</div>
+              <div style={{ fontSize: 12, color: "#2e7d32", lineHeight: 1.6 }}>Found in freshwater lakes, rivers and dams across Australia. Peaks in late summer and autumn. There is NO antidote.</div>
             </div>
-          );
-        })()}
+            {[
+              { title: "Where Found", body: "Freshwater lakes, ponds, rivers and dams Australia-wide. Most common in warm inland waterways. Any slow-moving or stagnant freshwater body including farm dams, irrigation channels and reservoirs." },
+              { title: "Peak Season", body: "Peak late summer and autumn (Feb-May) when water is warm and rainfall low. Year-round in tropical north. Warm water and low rainfall triggers blooms." },
+              { title: "What It Looks Like", body: "Looks like pea-green paint or slime on the water surface. Can appear blue-green, green, brown or red. May smell bad or musty. Forms thick mats near shoreline when blown by wind. Dead fish nearby is a warning sign. Not all algae blooms are visible — clear water can still be toxic." },
+              { title: "Why It Is Dangerous", body: "Produces toxins (microcystins and anatoxins) causing severe liver damage and neurological damage. There is NO antidote. Death can occur within 15 minutes to 24 hours of exposure. You cannot tell a toxic bloom from a safe one by looking at it." },
+            ].map(function(s, i) {
+              return <div key={i} style={card}>
+                <div style={{ fontSize: 11, fontWeight: "700", color: textLight, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>{s.title}</div>
+                <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{s.body}</div>
+              </div>;
+            })}
+            <div style={{ ...card, borderLeft: "4px solid #e74c3c" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: "#e74c3c", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>⚠️ Symptoms</div>
+              {["Vomiting and diarrhoea", "Weakness and lethargy", "Seizures", "Difficulty breathing", "Pale or yellow gums", "Collapse", "Death within hours in severe cases"].map(function(s, i) {
+                return <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#e74c3c", marginTop: 5, flexShrink: 0 }} />
+                  <div style={{ fontSize: 13, color: textSub, lineHeight: 1.5 }}>{s}</div>
+                </div>;
+              })}
+            </div>
+            <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: "#e65100", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>🚨 First Aid</div>
+              {["Remove dog from water immediately", "Rinse thoroughly with clean fresh water — do not let dog lick fur", "Call vet immediately — do not wait for symptoms to appear", "Call Animal Poisons Helpline 1300 869 738 — free 24/7", "Time is critical — early treatment is the only chance of survival", "Take a photo of the water if safe to do so — helps identify the toxin"].map(function(s, i) {
+                return <div key={i} style={{ display: "flex", gap: 10, marginBottom: 7 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#e65100", color: "white", fontSize: 11, fontWeight: "900", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</div>
+                  <div style={{ fontSize: 13, color: "#7a3800", lineHeight: 1.6 }}>{s}</div>
+                </div>;
+              })}
+            </div>
+            <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40" }}>
+              <div style={{ fontSize: 11, fontWeight: "800", color: accent, marginBottom: 6 }}>💡 Prevention Tips</div>
+              <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>Never let your dog drink from or swim in water that looks green, slimy or has surface scum. Always carry fresh water for your dog. Check local council websites for algae alerts before visiting lakes or dams. When in doubt, keep your dog out of the water entirely.</div>
+            </div>
+            <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", textAlign: "center", padding: "14px", borderRadius: 10, fontSize: 16, fontWeight: "800", textDecoration: "none" }}>📞 Emergency: 1300 869 738</a>
+          </div>
+        </div>
+      )}
+
 
 {/* PRO UPGRADE SCREEN */}
       {screen === "upgrade" && (
