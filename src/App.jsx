@@ -1857,7 +1857,6 @@ export default function App() {
               <div style={{ fontSize: 20, color: textLight }}>›</div>
             </button>
             <button onClick={function() { setScreen("seaanimals"); }} style={{ ...card, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", textAlign: "left", width: "100%", borderLeft: "4px solid #8e44ad" }}>
-              <div style={{ fontSize: 40 }}>🐌</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: "800", color: textMain }}>Sea Hares</div>
                 <div style={{ fontSize: 12, color: textLight, marginTop: 2 }}>Coastal sea creatures · Beaches</div>
@@ -1977,7 +1976,7 @@ export default function App() {
       )}
 
       {/* HAZARD DETAIL — Blue-Green Algae */}
-        {screen === "hazarddetail" && (function() {
+      {screen === "hazarddetail" && (function() {
           var h = selectedHazard || HAZARDS.find(function(x) { return x.id === "algae"; });
           if (!h) return null;
           return (
