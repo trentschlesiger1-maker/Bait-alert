@@ -258,64 +258,30 @@ async function reverseGeocode(lat, lng) {
 }
 
 async function fetchNearbyVets(lat, lng) {
-  try {
-    // Use Nominatim search API — free OpenStreetMap, no key needed
-    var url = "https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&extratags=1" +
-      "&q=veterinary&viewbox=" +
-      (lng - 0.5) + "," + (lat + 0.5) + "," + (lng + 0.5) + "," + (lat - 0.5) +
-      "&bounded=0&lat=" + lat + "&lon=" + lng;
-
-    var res = await fetch(url, {
-      headers: {
-        "Accept-Language": "en-AU",
-        "User-Agent": "SafePetsAustralia/1.0 (safepetsaustralia.com.au)"
-      }
-    });
-    var data = await res.json();
-
-    if (!data || data.length === 0) {
-      // Try wider search if nothing found
-      url = "https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&extratags=1&q=vet+clinic+australia&lat=" + lat + "&lon=" + lng + "&countrycodes=au";
-      res = await fetch(url, { headers: { "Accept-Language": "en-AU", "User-Agent": "SafePetsAustralia/1.0" } });
-      data = await res.json();
+  // Return a Google Maps search URL centred on the user's exact GPS location
+  // This is the most reliable approach — always works, shows real listings with phone numbers
+  var mapsUrl = "https://www.google.com/maps/search/veterinary+clinic/@" + lat.toFixed(5) + "," + lng.toFixed(5) + ",12z";
+  var emergencyUrl = "https://www.google.com/maps/search/emergency+vet+24+hour/@" + lat.toFixed(5) + "," + lng.toFixed(5) + ",12z";
+  return [
+    {
+      name: "Find Nearest Vet",
+      address: "Opens Google Maps centred on your location",
+      phone: null,
+      distance: null,
+      url: mapsUrl,
+      lat: lat,
+      lng: lng
+    },
+    {
+      name: "24 Hour Emergency Vet",
+      address: "Search for after-hours emergency vets near you",
+      phone: null,
+      distance: null,
+      url: emergencyUrl,
+      lat: lat,
+      lng: lng
     }
-
-    if (!data || data.length === 0) return [];
-
-    function distKm(a, b, c, d) {
-      var R = 6371;
-      var dLat = (c - a) * Math.PI / 180;
-      var dLon = (d - b) * Math.PI / 180;
-      var x = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(a*Math.PI/180) * Math.cos(c*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
-    }
-
-    var vets = data.map(function(el) {
-      var elLat = parseFloat(el.lat);
-      var elLng = parseFloat(el.lon);
-      var dist = distKm(lat, lng, elLat, elLng);
-      var distStr = dist < 1 ? (dist * 1000).toFixed(0) + "m" : dist < 100 ? dist.toFixed(1) + "km" : Math.round(dist) + "km";
-      var extra = el.extratags || {};
-      var addr = el.address || {};
-      var addrStr = [addr.house_number, addr.road, addr.suburb || addr.town || addr.city].filter(Boolean).join(" ");
-      return {
-        name: el.display_name.split(",")[0] || "Veterinary Clinic",
-        address: addrStr || (addr.suburb || addr.town || addr.city || ""),
-        phone: extra.phone || extra["contact:phone"] || null,
-        hours: extra.opening_hours || null,
-        distance: distStr,
-        distKm: dist,
-        lat: elLat,
-        lng: elLng
-      };
-    });
-
-    vets.sort(function(a, b) { return a.distKm - b.distKm; });
-    return vets.slice(0, 3);
-  } catch(e) {
-    console.error("Vet fetch error:", e);
-    return null;
-  }
+  ];
 }
 
 function requestNotification(risk, placeName) {
@@ -996,54 +962,19 @@ export default function App() {
 
                   {/* Nearest vets */}
                   <div style={{ ...card, borderLeft: "3px solid " + accent }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                      <div style={lbl}>Nearest Vets</div>
-                      {vetsLoading && <div className="spin" style={{ width: 11, height: 11, border: "2px solid #eee", borderTop: "2px solid " + accent, borderRadius: "50%" }} />}
-                    </div>
-                    {vetsLoading && <div style={{ fontSize: 13, color: textLight }}>Finding nearest vets...</div>}
-                    {!vetsLoading && vets && vets.length === 0 && (
-                      <div>
-                        <div style={{ fontSize: 13, color: textLight, marginBottom: 8 }}>No vets found in OpenStreetMap data nearby.</div>
-                        <a href="https://www.google.com/maps/search/emergency+vet+near+me" target="_blank" rel="noreferrer"
-                          style={{ display: "block", background: accent, color: "white", padding: "11px", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: "800", textAlign: "center" }}>
-                          Search Google Maps for Vets
-                        </a>
-                      </div>
-                    )}
-                    {!vetsLoading && vets && vets.map(function(v, i) {
-                      var mapsUrl = "https://www.google.com/maps/search/veterinary+clinic/" + (v.lat && v.lng ? "@" + v.lat + "," + v.lng + ",15z" : "near+me");
-                      var cleanPhone = v.phone ? v.phone.replace(/\s/g, "").replace(/^(\+61|0061)/, "0") : null;
+                    <div style={{ fontSize: 11, fontWeight: "800", color: accent, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Find Nearest Vet</div>
+                    {vets && vets.map(function(v, i) {
                       return (
-                        <div key={i} style={{ paddingBottom: i < vets.length - 1 ? 12 : 0, marginBottom: i < vets.length - 1 ? 12 : 0, borderBottom: i < vets.length - 1 ? "1px solid " + border : "none" }}>
-                          <div style={{ fontSize: 14, fontWeight: "700", color: textMain, marginBottom: 2 }}>{v.name}</div>
-                          {v.address && <div style={{ fontSize: 12, color: textLight, marginBottom: 2 }}>{v.address}</div>}
-                          {v.distance && <div style={{ fontSize: 12, color: accent, fontWeight: "600", marginBottom: 6 }}>{v.distance} away</div>}
-                          {v.hours && <div style={{ fontSize: 11, color: textLight, marginBottom: 6 }}>{v.hours}</div>}
-                          <div style={{ display: "flex", gap: 6 }}>
-                            {cleanPhone && (
-                              <a href={"tel:" + cleanPhone} style={{ flex: 1, display: "block", background: accent, color: "white", padding: "11px", borderRadius: 8, textDecoration: "none", fontSize: 14, fontWeight: "800", textAlign: "center" }}>
-                                Call {v.phone}
-                              </a>
-                            )}
-                            <a href={mapsUrl} target="_blank" rel="noreferrer"
-                              style={{ flex: cleanPhone ? "0 0 60px" : 1, display: "flex", alignItems: "center", justifyContent: "center", background: cleanPhone ? bgCard : accent, border: cleanPhone ? "1px solid " + border : "none", color: cleanPhone ? textSub : "white", padding: "11px", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: "700" }}>
-                              {cleanPhone ? "Map" : "Open in Maps"}
-                            </a>
-                          </div>
-                        </div>
+                        <a key={i} href={v.url} target="_blank" rel="noreferrer"
+                          style={{ display: "block", background: i === 0 ? accent : bgCard, border: "1px solid " + (i === 0 ? accent : border), color: i === 0 ? "white" : textMain, padding: "13px 16px", borderRadius: 10, textDecoration: "none", marginBottom: 8 }}>
+                          <div style={{ fontSize: 14, fontWeight: "800" }}>{v.name}</div>
+                          <div style={{ fontSize: 12, opacity: i === 0 ? 0.85 : 0.6, marginTop: 2 }}>{v.address}</div>
+                        </a>
                       );
                     })}
-                    {!vetsLoading && !vets && (
-                      <div>
-                        <div style={{ fontSize: 13, color: textLight, marginBottom: 8 }}>{isOnline ? "Could not load vet data automatically." : "Vet lookup requires internet."}</div>
-                        <a href={"https://www.google.com/maps/search/emergency+vet/@" + (location ? location.lat + "," + location.lng : "-25.5,133.5") + ",10z"} target="_blank" rel="noreferrer"
-                          style={{ display: "block", background: accent, color: "white", padding: "12px", borderRadius: 8, textDecoration: "none", fontSize: 14, fontWeight: "800", textAlign: "center" }}>
-                          Find Nearest Vet on Google Maps
-                        </a>
-                      </div>
-                    )}
-                    <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", padding: "11px", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: "800", textAlign: "center", marginTop: 10 }}>
-                      Animal Poisons Helpline — 1300 869 738
+                    <a href="tel:1300869738" style={{ display: "block", background: "#c0392b", color: "white", padding: "13px 16px", borderRadius: 10, textDecoration: "none", textAlign: "center" }}>
+                      <div style={{ fontSize: 14, fontWeight: "800" }}>Animal Poisons Helpline</div>
+                      <div style={{ fontSize: 12, opacity: 0.85 }}>1300 869 738 — Free 24/7</div>
                     </a>
                   </div>
 
@@ -2211,6 +2142,49 @@ export default function App() {
 
 
 {/* PRO UPGRADE SCREEN */}
+      {/* BAITING MAPS SCREEN */}
+      {screen === "map" && (
+        <div className="fu" style={{ padding: "20px 16px 24px" }}>
+          <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>Official <span style={{ color: accent }}>Baiting Maps</span></div>
+            <div style={{ fontSize: 13, color: textLight, lineHeight: 1.6 }}>These are the official government sources for each state. Always check before heading into the bush with your dog.</div>
+            {[
+              { state: "Western Australia", name: "DBCA Western Shield Map", desc: "All WA fox and feral cat 1080 baiting locations. 3.8 million hectares from Karratha to Esperance. All WA national parks must be treated as baited at all times.", url: "https://www.dbca.wa.gov.au/management/threat-management/western-shield/western-shield-fox-and-feral-cat-baiting-locations", tag: "EXTREME RISK", tagColor: "#c0392b" },
+              { state: "Victoria", name: "DEECA Baiting Notifications", desc: "Ground baiting program 1 March to 1 July 2026 across Gippsland and Hume. Interactive map link is on this page.", url: "https://agriculture.vic.gov.au/livestock-and-animals/livestock-health-and-welfare/livestock-predation-management/livestock-predation-management-in-eastern-victoria/baiting-notifications", tag: "HIGH RISK", tagColor: "#e67e22" },
+              { state: "New South Wales", name: "BAN1080 NSW Map", desc: "Most comprehensive NSW baiting map — compiled from NPWS and Local Land Services data. Shows aerial and ground bait sites.", url: "https://www.ban1080.org.au/map", tag: "HIGH RISK", tagColor: "#e67e22" },
+              { state: "Queensland", name: "QLD Wild Dog Management", desc: "QLD Government baiting information. Contact your local council for current program maps in your area.", url: "https://www.business.qld.gov.au/industries/farms-fishing-forestry/agriculture/land-management/health-pests-weeds-diseases/pests/animals/wild-dogs", tag: "HIGH RISK", tagColor: "#e67e22" },
+              { state: "South Australia", name: "SA Landscape Boards", desc: "SA Landscape Boards coordinate 1080 baiting. Ground baiting only in SA. Contact your local board for current maps.", url: "https://www.landscape.sa.gov.au/", tag: "HIGH RISK", tagColor: "#e67e22" },
+              { state: "Northern Territory", name: "NT Feral Animal Management", desc: "NT dingo and wild dog management. Aerial baiting permitted. All pastoral land should be treated as baited.", url: "https://nt.gov.au/environment/animals-and-plants/feral-animals-and-weeds/feral-animals/wild-dogs", tag: "EXTREME RISK", tagColor: "#c0392b" },
+              { state: "Tasmania", name: "TAS NRE Pest Management", desc: "Tasmania uses 1080 for possum and wallaby control only — not dingoes. Much lower risk than mainland.", url: "https://www.nre.tas.gov.au/animals-and-plants/animal-management/management-of-overabundant-wildlife", tag: "LOW-MODERATE", tagColor: "#27ae60" },
+              { state: "Emergency", name: "Animal Poisons Helpline", desc: "Free 24/7 veterinary toxicology advice. Call immediately if you suspect your dog has eaten a bait.", url: "tel:1300869738", tag: "FREE 24/7", tagColor: accent },
+            ].map(function(link, i) {
+              return (
+                <div key={i} style={{ ...card, padding: 0, overflow: "hidden" }}>
+                  <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid " + border }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                      <div style={{ fontSize: 13, fontWeight: "800", color: textMain }}>{link.state}</div>
+                      <span style={{ fontSize: 9, fontWeight: "700", padding: "2px 7px", borderRadius: 10, background: link.tagColor + "20", color: link.tagColor, border: "1px solid " + link.tagColor + "40" }}>{link.tag}</span>
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: "700", color: accent, marginBottom: 4 }}>{link.name}</div>
+                    <div style={{ fontSize: 12, color: textLight, lineHeight: 1.6 }}>{link.desc}</div>
+                  </div>
+                  <a href={link.url} target="_blank" rel="noreferrer"
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: accent + "08", textDecoration: "none" }}>
+                    <span style={{ fontSize: 12, fontWeight: "700", color: accent }}>Open</span>
+                    <span style={{ fontSize: 10, color: textLight }}>{link.url.startsWith("tel") ? "tap to call" : "opens in browser"}</span>
+                  </a>
+                </div>
+              );
+            })}
+            <div style={{ ...card, background: "#fff8e1", border: "1px solid #ffe082" }}>
+              <div style={{ fontSize: 12, fontWeight: "800", color: "#e65100", marginBottom: 6 }}>Important</div>
+              <div style={{ fontSize: 12, color: "#7a3800", lineHeight: 1.7 }}>These maps show government-managed programs only. Private landholders also bait and are not required to report publicly. Always treat all rural and bushland areas as potentially baited.</div>
+            </div>
+            <Btn onClick={function() { setScreen("home"); }}>← Back</Btn>
+          </div>
+        </div>
+      )}
+
       {screen === "upgrade" && (
         <div className="fu" style={{ padding: "20px 16px 24px" }}>
           <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 14 }}>
