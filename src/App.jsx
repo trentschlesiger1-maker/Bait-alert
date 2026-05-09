@@ -158,34 +158,102 @@ function getRecs(risk) {
 }
 
 function getRiskAssessment(lat, lng) {
+  // ── Step 1: Check low risk urban zones first ─────────────────────────────
   for (const z of LOW_RISK_ZONES) {
     if (getDistanceKm(lat, lng, z.lat, z.lng) < z.radius) {
-      return { risk: "LOW", color: "#27ae60", region: z.name, notes: "You are in or near a major metropolitan area. 1080 baiting is generally not conducted in urban zones.", recommendations: getRecs("LOW") };
+      return { risk: "LOW", color: "#27ae60", region: z.name, notes: "You are in or near a major metropolitan area. 1080 baiting programs are generally not conducted in urban zones, though adjacent rural areas may still be baited. Keep dogs on lead in any parkland or bushland fringe areas.", recommendations: getRecs("LOW") };
     }
   }
-  let closest = null, closestDist = Infinity;
+
+  // ── Step 2: Find ALL overlapping risk regions (not just the closest) ─────
+  var overlapping = [];
+  var nearbyRegions = [];
   for (const r of RISK_REGIONS) {
     const dist = getDistanceKm(lat, lng, r.lat, r.lng);
-    if (dist < closestDist) { closestDist = dist; closest = { ...r }; }
+    if (dist < r.radius) {
+      overlapping.push({ ...r, dist });
+    } else if (dist < r.radius * 2) {
+      nearbyRegions.push({ ...r, dist });
+    }
   }
-  if (!closest) return null;
-  if (closestDist < closest.radius) return { risk: closest.risk, color: closest.color, region: closest.name, notes: closest.notes, recommendations: getRecs(closest.risk) };
-  if (closestDist < closest.radius * 1.5) return { risk: "MODERATE", color: "#d4930a", region: "Near " + closest.name, notes: "You are within range of a known baiting zone. Risk increases further from urban centres.", recommendations: getRecs("MODERATE") };
-  return { risk: "LOW-MODERATE", color: "#7daa2d", region: "Rural/Semi-rural area", notes: "Lower-risk area, but 1080 baiting can occur on private land throughout Australia. Treat as moderate risk in rural areas.", recommendations: getRecs("LOW-MODERATE") };
+
+  // ── Step 3: If inside one or more risk regions, use highest risk ──────────
+  if (overlapping.length > 0) {
+    const riskOrder = ["LOW", "LOW-MODERATE", "MODERATE", "HIGH", "EXTREME"];
+    overlapping.sort(function(a, b) {
+      return riskOrder.indexOf(b.risk) - riskOrder.indexOf(a.risk);
+    });
+    var best = overlapping[0];
+    return {
+      risk: best.risk,
+      color: best.color,
+      region: best.name,
+      notes: best.notes,
+      recommendations: getRecs(best.risk)
+    };
+  }
+
+  // ── Step 4: Near a risk region but not inside ────────────────────────────
+  if (nearbyRegions.length > 0) {
+    nearbyRegions.sort(function(a, b) { return a.dist - b.dist; });
+    var nearest = nearbyRegions[0];
+    var riskOrder2 = ["LOW", "LOW-MODERATE", "MODERATE", "HIGH", "EXTREME"];
+    var nearIdx = riskOrder2.indexOf(nearest.risk);
+    // Step down one risk level when on the edge of a zone
+    var nearRisk = riskOrder2[Math.max(0, nearIdx - 1)];
+    var nearColors = { LOW: "#27ae60", "LOW-MODERATE": "#7daa2d", MODERATE: "#d4930a", HIGH: "#e67e22", EXTREME: "#c0392b" };
+    return {
+      risk: nearRisk,
+      color: nearColors[nearRisk],
+      region: "Near " + nearest.name,
+      notes: "You are close to a known " + nearest.risk + " baiting region. Risk increases as you move into more rural and pastoral areas. " + nearest.notes,
+      recommendations: getRecs(nearRisk)
+    };
+  }
+
+  // ── Step 5: Rural Australia — default moderate ───────────────────────────
+  // Determine state from coordinates for more accurate default
+  var stateNote = "Lower-risk area, but 1080 baiting can occur on private pastoral land throughout Australia. Always treat rural and bushland areas as potentially baited. Keep dogs on lead and never let them eat anything off the ground.";
+  if (lng > 129 && lat > -26) stateNote = "Northern Territory rural area. Dingo and wild dog baiting programs operate on surrounding station land. Aerial baiting permitted in NT. Treat all pastoral land as potentially baited.";
+  else if (lng < 129 && lat > -22) stateNote = "Remote Kimberley or Pilbara area. Active pastoral baiting programs on surrounding station land. Very limited vet access — always carry emergency supplies.";
+  else if (lng > 148 && lat < -35) stateNote = "Rural southern NSW or Victoria. Fox baiting continuous and ongoing in NSW. DEECA March-July baiting program active in Victoria. Treat all farmland as potentially baited.";
+
+  return {
+    risk: "MODERATE",
+    color: "#d4930a",
+    region: "Rural Australia",
+    notes: stateNote,
+    recommendations: getRecs("MODERATE")
+  };
 }
 
 async function reverseGeocode(lat, lng) {
   try {
-    const res = await fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat=" + lat + "&lon=" + lng + "&zoom=10&addressdetails=1", { headers: { "Accept-Language": "en" } });
+    // Use zoom=12 for more precise suburb/town level results
+    const res = await fetch(
+      "https://nominatim.openstreetmap.org/reverse?format=json&lat=" + lat + "&lon=" + lng + "&zoom=12&addressdetails=1",
+      { headers: { "Accept-Language": "en-AU", "User-Agent": "SafePetsAustralia/1.0" } }
+    );
     const data = await res.json();
     const a = data.address || {};
-    const suburb = a.suburb || a.village || a.town || a.city_district || "";
-    const city = a.city || a.county || a.state_district || "";
-    const state = a.state || "";
-    if (suburb && city) return suburb + ", " + city + ", " + state;
-    if (city) return city + ", " + state;
-    if (suburb) return suburb + ", " + state;
-    return state || "";
+
+    // Build a precise location string — suburb/town first, then region
+    var parts = [];
+    var local = a.suburb || a.neighbourhood || a.village || a.hamlet || a.town || a.city_district || "";
+    var city = a.city || a.municipality || "";
+    var county = a.county || a.state_district || "";
+    var state = a.state || "";
+
+    // Abbreviate Australian states
+    var stateAbbr = { "Western Australia": "WA", "Queensland": "QLD", "New South Wales": "NSW", "Victoria": "VIC", "South Australia": "SA", "Northern Territory": "NT", "Tasmania": "TAS", "Australian Capital Territory": "ACT" };
+    var stateShort = stateAbbr[state] || state;
+
+    if (local) parts.push(local);
+    if (city && city !== local) parts.push(city);
+    else if (county && !city) parts.push(county);
+    if (stateShort) parts.push(stateShort);
+
+    return parts.join(", ");
   } catch { return ""; }
 }
 
@@ -640,87 +708,189 @@ export default function App() {
 
         {/* HOME */}
         {screen === "home" && (
-          <div className="fu" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "28px 24px 24px", gap: 28 }}>
-            {petProfile && (
-              <div style={{ ...card, width: "100%", maxWidth: 400, display: "flex", gap: 12, alignItems: "center" }}>
-                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#fff3e0", border: "2px solid " + accent, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {petProfile.photo ? <img src={petProfile.photo} alt="pet" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 24 }}>🐶</span>}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: "700", color: textMain }}>{petProfile.name}</div>
-                  <div style={{ fontSize: 12, color: textLight }}>{petProfile.breed}{petProfile.weight ? " · " + petProfile.weight + "kg" : ""}{petProfile.age ? " · " + petProfile.age : ""}</div>
-                  {petProfile.microchip && <div style={{ fontSize: 10, color: textLight, fontFamily: "monospace", marginTop: 2 }}>Chip: {petProfile.microchip}</div>}
-                </div>
-                <button onClick={function() { setPetForm(petProfile); setScreen("petprofile"); }} style={{ background: "none", border: "none", color: textLight, fontSize: 18, cursor: "pointer" }}>✏️</button>
-              </div>
-            )}
+          <div className="fu" style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 0 40px", gap: 0, background: bg }}>
 
-            <div style={{ textAlign: "center", maxWidth: 360 }}>
-              <div style={{ fontSize: 40, fontWeight: "900", lineHeight: 1.1, color: textMain, letterSpacing: "-0.03em", marginBottom: 10 }}>
-                Is it safe<br /><span style={{ color: accent }}>where you are?</span>
+            {/* HERO — Risk Level Dashboard */}
+            <div style={{ width: "100%", position: "relative", overflow: "hidden" }}>
+              {/* Background gradient based on risk */}
+              <div style={{
+                background: assessment
+                  ? "linear-gradient(145deg, " + (assessment.color || "#007a70") + " 0%, " + (assessment.color || "#00B8A8") + "cc 100%)"
+                  : "linear-gradient(145deg, #007a70 0%, #00B8A8 100%)",
+                padding: "32px 24px 40px",
+                display: "flex", flexDirection: "column", alignItems: "center",
+                position: "relative"
+              }}>
+                {/* Decorative circles */}
+                <div style={{ position: "absolute", top: -40, right: -40, width: 180, height: 180, background: "rgba(255,255,255,0.06)", borderRadius: "50%" }} />
+                <div style={{ position: "absolute", bottom: -20, left: -30, width: 120, height: 120, background: "rgba(255,255,255,0.04)", borderRadius: "50%" }} />
+                <div style={{ position: "absolute", top: 20, left: 20, width: 60, height: 60, background: "rgba(255,255,255,0.05)", borderRadius: "50%" }} />
+
+                {/* Pet profile pill */}
+                {petProfile && (
+                  <div onClick={function() { setPetForm(petProfile); setScreen("petprofile"); }}
+                    style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.18)", borderRadius: 30, padding: "5px 14px 5px 5px", marginBottom: 24, cursor: "pointer", backdropFilter: "blur(4px)" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.3)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {petProfile.photo ? <img src={petProfile.photo} alt="pet" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span style={{ fontSize: 14 }}>🐶</span>}
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: "700", color: "white" }}>{petProfile.name}</span>
+                    {petProfile.breed && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>{petProfile.breed}</span>}
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>›</span>
+                  </div>
+                )}
+
+                {assessment ? (
+                  <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: "700", marginBottom: 6 }}>1080 Risk Level</div>
+                    <div style={{ fontSize: 64, fontWeight: "900", color: "white", letterSpacing: "-0.03em", lineHeight: 1, textShadow: "0 4px 20px rgba(0,0,0,0.25)" }}>{assessment.risk}</div>
+                    {placeName && (
+                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                        <div style={{ fontSize: 16, color: "white", fontWeight: "700" }}>📍 {placeName}</div>
+                        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{assessment.region}</div>
+                      </div>
+                    )}
+                    {!placeName && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", marginTop: 8 }}>{assessment.region}</div>}
+                    <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 16 }}>
+                      <button onClick={function() { setScreen("result"); }}
+                        style={{ background: "rgba(255,255,255,0.2)", border: "1.5px solid rgba(255,255,255,0.4)", color: "white", borderRadius: 20, padding: "8px 20px", fontSize: 12, fontWeight: "700", cursor: "pointer", fontFamily: "system-ui", backdropFilter: "blur(4px)" }}>
+                        Full Report →
+                      </button>
+                      <button onClick={function() { setScreen("disclaimer"); }}
+                        style={{ background: "rgba(255,255,255,0.12)", border: "1.5px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.85)", borderRadius: 20, padding: "8px 20px", fontSize: 12, fontWeight: "700", cursor: "pointer", fontFamily: "system-ui" }}>
+                        Refresh ↻
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: "700", marginBottom: 10 }}>Is your dog safe right now?</div>
+                    <div style={{ fontSize: 72, fontWeight: "900", color: "rgba(255,255,255,0.2)", letterSpacing: "-0.03em", lineHeight: 1 }}>???</div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 12, lineHeight: 1.7, maxWidth: 260 }}>
+                      1080 baits kill dogs across Australia every year. Tap to check your exact location risk.
+                    </div>
+                    <button onClick={function() { setScreen("disclaimer"); }}
+                      style={{ marginTop: 20, background: "white", border: "none", color: "#007a70", borderRadius: 30, padding: "14px 36px", fontSize: 16, fontWeight: "900", cursor: "pointer", fontFamily: "system-ui", boxShadow: "0 6px 24px rgba(0,0,0,0.2)", letterSpacing: "-0.01em" }}>
+                      Check My Location
+                    </button>
+                  </div>
+                )}
               </div>
-              <div style={{ color: textSub, fontSize: 14, lineHeight: 1.7 }}>
-                1080 baits are used widely across Australia. They are <strong style={{ color: accent }}>lethal to dogs</strong> and risk areas aren't always signed.
+
+              {/* Risk meter strip */}
+              <div style={{ display: "flex", height: 5 }}>
+                {["#27ae60","#7daa2d","#d4930a","#e67e22","#c0392b"].map(function(c, i) {
+                  var isActive = assessment && ["LOW","LOW-MODERATE","MODERATE","HIGH","EXTREME"][i] === assessment.risk;
+                  return <div key={i} style={{ flex: 1, background: c, opacity: isActive ? 1 : 0.3, transition: "opacity 0.3s" }} />;
+                })}
               </div>
             </div>
 
-            <div style={{ position: "relative", width: 90, height: 90, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div className="pulse" style={{ position: "absolute", width: 70, height: 70, border: "2px solid " + accent, borderRadius: "50%", top: 10, left: 10, opacity: 0.5 }} />
-              <div className="pulse" style={{ position: "absolute", width: 70, height: 70, border: "2px solid " + accent, borderRadius: "50%", top: 10, left: 10, animationDelay: "0.9s", opacity: 0.25 }} />
-              <div style={{ fontSize: 48, position: "relative", zIndex: 1 }}>🐾</div>
+            {/* QUICK ACTION ROW */}
+            <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: bgCard, borderBottom: "1px solid " + border }}>
+              {[
+                { label: "Emergency", icon: "🚨", color: "#e74c3c", action: function() { setSymptomStep(0); setSymptomAnswers([]); setScreen("symptom"); } },
+                { label: "First Aid", icon: "💊", color: "#e67e22", action: function() { setScreen("firstaid"); } },
+                { label: "Nearest Vet", icon: "📞", color: accent, action: function() { setScreen("firstaid"); } },
+              ].map(function(item, i) {
+                return <button key={i} onClick={item.action} style={{ padding: "14px 8px", background: "none", border: "none", borderRight: i < 2 ? "1px solid " + border : "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: item.color + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{item.icon}</div>
+                  <span style={{ fontSize: 11, fontWeight: "700", color: textSub, fontFamily: "system-ui" }}>{item.label}</span>
+                </button>;
+              })}
             </div>
 
-            <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* MAIN MENU */}
+            <div style={{ width: "100%", maxWidth: 460, padding: "20px 16px 0" }}>
 
               {/* RISK TOOLS */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: "700", color: textLight, letterSpacing: "0.15em", textTransform: "uppercase" }}>Risk Tools</div>
-                <Btn primary onClick={function() { setScreen("disclaimer"); }}>Check My 1080 Location Risk</Btn>
-                <Btn onClick={function() { setSymptomStep(0); setSymptomAnswers([]); setScreen("symptom"); }}>Emergency Symptom Checker</Btn>
-                <Btn onClick={function() { setScreen("firstaid"); }}>1080 First Aid Guide</Btn>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: "800", color: textLight, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 10, paddingLeft: 2 }}>Risk Tools</div>
+                <div style={{ borderRadius: 14, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                  {[
+                    { label: "Check My 1080 Location Risk", sub: "GPS-based risk assessment", icon: "📍", primary: true, action: function() { setScreen("disclaimer"); } },
+                    { label: "Emergency Symptom Checker", sub: "1080 bait · Snake bite", icon: "🚨", action: function() { setSymptomStep(0); setSymptomAnswers([]); setScreen("symptom"); } },
+                    { label: "1080 First Aid Guide", sub: "Act before symptoms appear", icon: "💊", action: function() { setScreen("firstaid"); } },
+                  ].map(function(item, i) {
+                    return <button key={i} onClick={item.action} style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "14px 16px", width: "100%",
+                      background: item.primary ? accent : bgCard,
+                      border: "none", borderTop: i > 0 ? "1px solid " + border : "none",
+                      cursor: "pointer", textAlign: "left"
+                    }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, background: item.primary ? "rgba(255,255,255,0.2)" : accent + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: "700", color: item.primary ? "white" : textMain, fontFamily: "system-ui" }}>{item.label}</div>
+                        <div style={{ fontSize: 11, color: item.primary ? "rgba(255,255,255,0.7)" : textLight, marginTop: 1, fontFamily: "system-ui" }}>{item.sub}</div>
+                      </div>
+                      <span style={{ color: item.primary ? "rgba(255,255,255,0.5)" : textLight, fontSize: 20 }}>›</span>
+                    </button>;
+                  })}
+                </div>
               </div>
 
               {/* HAZARDS */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: "700", color: textLight, letterSpacing: "0.15em", textTransform: "uppercase" }}>Hazards</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <Btn onClick={function() { setScreen("snakes"); }}>Snakes</Btn>
-                  <Btn onClick={function() { setScreen("canetoad"); }}>Cane Toads</Btn>
-                  <Btn onClick={function() { setScreen("seaanimals"); }}>Sea Hares</Btn>
-                  <Btn onClick={function() { setScreen("algae"); }}>Blue-Green Algae</Btn>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: "800", color: textLight, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 10, paddingLeft: 2 }}>Hazards</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {[
+                    { label: "Snakes", sub: "10 species · All states", icon: "🐍", color: "#c0392b", action: function() { setScreen("snakes"); } },
+                    { label: "Cane Toads", sub: "QLD · NT · North WA", icon: "🐸", color: "#e67e22", action: function() { setScreen("canetoad"); } },
+                    { label: "Sea Hares", sub: "Beaches · Summer", icon: "🌊", color: "#8e44ad", action: function() { setScreen("seaanimals"); } },
+                    { label: "Blue-Green Algae", sub: "Freshwater · Feb-May", icon: "💧", color: "#27ae60", action: function() { setScreen("algae"); } },
+                  ].map(function(item, i) {
+                    return <button key={i} onClick={item.action} style={{ padding: "14px", background: bgCard, border: "1px solid " + border, borderRadius: 14, cursor: "pointer", textAlign: "left", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: item.color + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 8 }}>{item.icon}</div>
+                      <div style={{ fontSize: 13, fontWeight: "800", color: textMain, fontFamily: "system-ui" }}>{item.label}</div>
+                      <div style={{ fontSize: 11, color: textLight, marginTop: 2, fontFamily: "system-ui" }}>{item.sub}</div>
+                    </button>;
+                  })}
                 </div>
               </div>
 
               {/* PLAN YOUR TRIP */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: "700", color: textLight, letterSpacing: "0.15em", textTransform: "uppercase" }}>Plan Your Trip</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <Btn onClick={function() { setScreen("campsites"); }}>Campsites</Btn>
-                  <Btn onClick={function() { setScreen("route"); }}>Route Risk</Btn>
-                  <Btn onClick={function() { setScreen("map"); }}>Baiting Maps</Btn>
-                  <Btn onClick={function() { setScreen("areasearch"); }}>Area Search</Btn>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: "800", color: textLight, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 10, paddingLeft: 2 }}>Plan Your Trip</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {[
+                    { label: "Campsites", sub: "118 sites rated", icon: "🏕️", color: accent, action: function() { setScreen("campsites"); } },
+                    { label: "Route Risk", sub: "Check your drive", icon: "🗺️", color: "#2980b9", action: function() { setScreen("route"); } },
+                    { label: "Baiting Maps", sub: "Official govt maps", icon: "📋", color: "#7f8c8d", action: function() { setScreen("map"); } },
+                    { label: "Area Search", sub: isPro ? "AI briefing" : "⭐ Pro", icon: "🔍", color: isPro ? accent : "#f39c12", action: function() { setScreen("areasearch"); } },
+                  ].map(function(item, i) {
+                    return <button key={i} onClick={item.action} style={{ padding: "14px", background: bgCard, border: "1px solid " + border, borderRadius: 14, cursor: "pointer", textAlign: "left", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: item.color + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 8 }}>{item.icon}</div>
+                      <div style={{ fontSize: 13, fontWeight: "800", color: textMain, fontFamily: "system-ui" }}>{item.label}</div>
+                      <div style={{ fontSize: 11, color: textLight, marginTop: 2, fontFamily: "system-ui" }}>{item.sub}</div>
+                    </button>;
+                  })}
                 </div>
               </div>
 
               {/* MORE */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: "700", color: textLight, letterSpacing: "0.15em", textTransform: "uppercase" }}>More</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <Btn onClick={function() { setScreen("report"); }}>Report Bait Sign</Btn>
-                  {petProfile
-                    ? <Btn onClick={function() { setPetForm(petProfile); setScreen("petprofile"); }}>Edit Pet Profile</Btn>
-                    : <Btn onClick={function() { setPetForm({ name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" }); setScreen("petprofile"); }}>Add Pet Profile</Btn>
-                  }
-                  <Btn onClick={function() { setScreen("saved"); }}>Saved Locations</Btn>
-                  <Btn onClick={function() { setScreen("upgrade"); }}>{isPro ? "Pro — Active" : "Upgrade to Pro"}</Btn>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: "800", color: textLight, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 10, paddingLeft: 2 }}>More</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {[
+                    { label: "Report Bait Sign", sub: "Community pin", icon: "📍", color: "#c0392b", action: function() { setScreen("report"); } },
+                    { label: petProfile ? "Edit Pet Profile" : "Add Pet Profile", sub: petProfile ? petProfile.name : "Name · Microchip · Vet", icon: "🐶", color: "#8e44ad", action: function() { setPetForm(petProfile || { name: "", breed: "", weight: "", age: "", color: "", microchip: "", vet: "", vetPhone: "", medicalNotes: "", vaccineDate: "", photo: "" }); setScreen("petprofile"); } },
+                    { label: "Saved Locations", sub: "Quick access", icon: "⭐", color: "#f39c12", action: function() { setScreen("saved"); } },
+                    { label: isPro ? "Pro Active ✓" : "Upgrade to Pro", sub: isPro ? "All unlocked" : "$9.99 one-off", icon: "🔓", color: accent, action: function() { setScreen("upgrade"); } },
+                  ].map(function(item, i) {
+                    return <button key={i} onClick={item.action} style={{ padding: "14px", background: i === 3 && !isPro ? accent + "08" : bgCard, border: "1px solid " + (i === 3 && !isPro ? accent + "50" : border), borderRadius: 14, cursor: "pointer", textAlign: "left", boxShadow: "0 1px 6px rgba(0,0,0,0.05)" }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: item.color + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 8 }}>{item.icon}</div>
+                      <div style={{ fontSize: 13, fontWeight: "800", color: i === 3 && !isPro ? accent : textMain, fontFamily: "system-ui" }}>{item.label}</div>
+                      <div style={{ fontSize: 11, color: textLight, marginTop: 2, fontFamily: "system-ui" }}>{item.sub}</div>
+                    </button>;
+                  })}
                 </div>
               </div>
 
             </div>
 
             {!isOnline && (
-              <div style={{ background: "#fff8e1", border: "1px solid #ffe082", borderRadius: 10, padding: "10px 16px", fontSize: 12, color: "#7a5800", maxWidth: 360, textAlign: "center", lineHeight: 1.6 }}>
-                📵 <strong>Offline mode</strong> — symptom checker, first aid, campsites and snake guide all work without internet. Vet finder and AI search need signal.
+              <div style={{ background: "#fff8e1", border: "1px solid #ffe082", borderRadius: 12, padding: "10px 16px", fontSize: 12, color: "#7a5800", maxWidth: 428, textAlign: "center", lineHeight: 1.6, margin: "0 16px" }}>
+                📵 Offline mode — symptom checker, first aid, campsites and snake guide all work without internet.
               </div>
             )}
           </div>
@@ -763,11 +933,16 @@ export default function App() {
                   {/* Risk card */}
                   <div style={{ background: assessment.color, borderRadius: 14, padding: 20, color: "#fff", position: "relative", overflow: "hidden", boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}>
                     <div style={{ position: "absolute", top: -20, right: -20, width: 120, height: 120, background: "rgba(255,255,255,0.08)", borderRadius: "50%" }} />
-                    <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.8, marginBottom: 4, fontFamily: "monospace" }}>Risk Level</div>
+                    <div style={{ fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", opacity: 0.8, marginBottom: 4, fontFamily: "monospace" }}>1080 Risk Level</div>
                     <div style={{ fontSize: 46, fontWeight: "900", lineHeight: 1, letterSpacing: "-0.02em" }}>{assessment.risk}</div>
-                    <div style={{ fontSize: 14, opacity: 0.92, marginTop: 6 }}>{placeName || assessment.region}</div>
-                    {placeName && <div style={{ fontSize: 11, opacity: 0.65, marginTop: 2 }}>{assessment.region}</div>}
-                    {petProfile && <div style={{ fontSize: 12, opacity: 0.9, marginTop: 8 }}>Travelling with {petProfile.name}{petProfile.breed ? " · " + petProfile.breed : ""}{petProfile.weight ? " · " + petProfile.weight + "kg" : ""}</div>}
+                    {placeName && (
+                      <div style={{ marginTop: 8 }}>
+                        <div style={{ fontSize: 15, fontWeight: "700", opacity: 0.95 }}>📍 {placeName}</div>
+                        <div style={{ fontSize: 12, opacity: 0.75, marginTop: 2 }}>{assessment.region}</div>
+                      </div>
+                    )}
+                    {!placeName && <div style={{ fontSize: 14, opacity: 0.92, marginTop: 6 }}>{assessment.region}</div>}
+                    {petProfile && <div style={{ fontSize: 12, opacity: 0.9, marginTop: 8, borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: 8 }}>🐕 {petProfile.name}{petProfile.breed ? " · " + petProfile.breed : ""}{petProfile.weight ? " · " + petProfile.weight + "kg" : ""}</div>}
                     <div style={{ marginTop: 14 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 8, opacity: 0.7, marginBottom: 4 }}>
                         {RISK_ORDER.map(function(r) { return <span key={r}>{r}</span>; })}
@@ -1502,6 +1677,10 @@ export default function App() {
             <div className="fu" style={{ padding: "20px 16px 24px" }}>
               <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🏕️ Campsite <span style={{ color: accent }}>Safety Ratings</span></div>
+                <div style={{ ...card, background: "#fdecea", border: "1px solid #f5b7b1" }}>
+                  <div style={{ fontSize: 12, fontWeight: "800", color: "#c0392b", marginBottom: 4 }}>☠️ Secondary Poisoning — Read Before You Go</div>
+                  <div style={{ fontSize: 12, color: "#7b241c", lineHeight: 1.7 }}>Most 1080 dog deaths are from eating a <strong>poisoned carcass</strong> — not a bait directly. Dead foxes, rabbits and feral cats remain toxic for <strong>up to 75 days</strong> after a baiting program ends. Signs coming down does NOT mean the area is safe. Never let your dog eat or sniff any carcass anywhere in rural or bushland Australia.</div>
+                </div>
                 <div style={{ ...card, background: accent + "10", border: "2px solid " + accent, textAlign: "center", padding: 24 }}>
                   <div style={{ fontSize: 32, marginBottom: 8 }}>🏕️</div>
                   <div style={{ fontSize: 17, fontWeight: "900", color: textMain, marginBottom: 8 }}>Safe Pets Pro Feature</div>
@@ -1524,6 +1703,10 @@ export default function App() {
             <div className="fu" style={{ padding: "20px 20px 48px" }}>
               <div style={{ maxWidth: 460, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ fontSize: 22, fontWeight: "900", color: textMain }}>🏕️ Campsite <span style={{ color: accent }}>Safety Ratings</span></div>
+                <div style={{ ...card, background: "#fdecea", border: "1px solid #f5b7b1" }}>
+                  <div style={{ fontSize: 12, fontWeight: "800", color: "#c0392b", marginBottom: 4 }}>☠️ Secondary Poisoning — Read Before You Go</div>
+                  <div style={{ fontSize: 12, color: "#7b241c", lineHeight: 1.7 }}>Most 1080 dog deaths are from eating a <strong>poisoned carcass</strong> — not a bait directly. Dead foxes, rabbits and feral cats remain toxic for <strong>up to 75 days</strong> after a baiting program ends. Signs coming down does NOT mean the area is safe. Never let your dog eat or sniff any carcass anywhere in rural or bushland Australia.</div>
+                </div>
               <div style={{ ...card, background: "#e0f5f3", border: "1px solid " + accent + "40", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ fontSize: 12, color: textSub, lineHeight: 1.5 }}>
                   <strong style={{ color: accent }}>{CAMPSITE_RATINGS.length} campsites</strong> with 1080 risk ratings, dog policies and safety notes.
@@ -1562,12 +1745,7 @@ export default function App() {
                         </div>
                       )}
                       <div style={{ fontSize: 13, color: textSub, lineHeight: 1.7 }}>{c.notes}</div>
-                      {(c.risk === "HIGH" || c.risk === "EXTREME") && (
-                        <div style={{ marginTop: 8, background: "#fdecea", borderRadius: 8, padding: "8px 10px" }}>
-                          <div style={{ fontSize: 11, fontWeight: "800", color: "#c0392b", marginBottom: 3 }}>☠️ Secondary Poisoning Risk</div>
-                          <div style={{ fontSize: 11, color: "#7b241c", lineHeight: 1.6 }}>Never let your dog eat any carcass in this area. Poisoned animals remain toxic for up to 75 days after baiting ends — even after signs come down.</div>
-                        </div>
-                      )}
+
                     </div>
                   );
                 })}
