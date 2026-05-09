@@ -259,22 +259,29 @@ async function reverseGeocode(lat, lng) {
 
 async function fetchNearbyVets(lat, lng) {
   try {
-    // Use Overpass API (OpenStreetMap) — completely free, no key needed
-    // Try progressively wider radii for remote areas
-    var radii = [50000, 150000, 300000, 500000, 1000000]; // 50, 150, 300, 500, 1000km
-    var data = null;
-    for (var r = 0; r < radii.length; r++) {
-      var radius = radii[r];
-      var query = '[out:json][timeout:25];(node["amenity"="veterinary"](around:' + radius + ',' + lat + ',' + lng + ');way["amenity"="veterinary"](around:' + radius + ',' + lat + ',' + lng + '););out body center 8;';
-      var res = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        body: "data=" + encodeURIComponent(query)
-      });
+    // Use Nominatim search API — free OpenStreetMap, no key needed
+    var url = "https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&extratags=1" +
+      "&q=veterinary&viewbox=" +
+      (lng - 0.5) + "," + (lat + 0.5) + "," + (lng + 0.5) + "," + (lat - 0.5) +
+      "&bounded=0&lat=" + lat + "&lon=" + lng;
+
+    var res = await fetch(url, {
+      headers: {
+        "Accept-Language": "en-AU",
+        "User-Agent": "SafePetsAustralia/1.0 (safepetsaustralia.com.au)"
+      }
+    });
+    var data = await res.json();
+
+    if (!data || data.length === 0) {
+      // Try wider search if nothing found
+      url = "https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&extratags=1&q=vet+clinic+australia&lat=" + lat + "&lon=" + lng + "&countrycodes=au";
+      res = await fetch(url, { headers: { "Accept-Language": "en-AU", "User-Agent": "SafePetsAustralia/1.0" } });
       data = await res.json();
-      if (data.elements && data.elements.length >= 2) break;
     }
-    if (!data || !data.elements || data.elements.length === 0) return [];
-    // Calculate distance and sort
+
+    if (!data || data.length === 0) return [];
+
     function distKm(a, b, c, d) {
       var R = 6371;
       var dLat = (c - a) * Math.PI / 180;
@@ -282,24 +289,27 @@ async function fetchNearbyVets(lat, lng) {
       var x = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(a*Math.PI/180) * Math.cos(c*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
       return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
     }
-    var vets = data.elements.map(function(el) {
-      var elLat = el.lat || (el.center && el.center.lat);
-      var elLng = el.lon || (el.center && el.center.lon);
+
+    var vets = data.map(function(el) {
+      var elLat = parseFloat(el.lat);
+      var elLng = parseFloat(el.lon);
       var dist = distKm(lat, lng, elLat, elLng);
-      var tags = el.tags || {};
       var distStr = dist < 1 ? (dist * 1000).toFixed(0) + "m" : dist < 100 ? dist.toFixed(1) + "km" : Math.round(dist) + "km";
-      var addrParts = [tags["addr:housenumber"], tags["addr:street"], tags["addr:suburb"] || tags["addr:city"]].filter(Boolean);
+      var extra = el.extratags || {};
+      var addr = el.address || {};
+      var addrStr = [addr.house_number, addr.road, addr.suburb || addr.town || addr.city].filter(Boolean).join(" ");
       return {
-        name: tags.name || tags["operator"] || "Veterinary Clinic",
-        address: addrParts.length > 0 ? addrParts.join(" ") : (tags["addr:suburb"] || tags["addr:city"] || tags["addr:town"] || ""),
-        phone: tags.phone || tags["contact:phone"] || null,
-        hours: tags.opening_hours || null,
+        name: el.display_name.split(",")[0] || "Veterinary Clinic",
+        address: addrStr || (addr.suburb || addr.town || addr.city || ""),
+        phone: extra.phone || extra["contact:phone"] || null,
+        hours: extra.opening_hours || null,
         distance: distStr,
         distKm: dist,
         lat: elLat,
         lng: elLng
       };
     });
+
     vets.sort(function(a, b) { return a.distKm - b.distKm; });
     return vets.slice(0, 3);
   } catch(e) {
@@ -368,9 +378,6 @@ export default function App() {
   const [assessment, setAssessment] = useState(null);
   const [locError, setLocError] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [aiResult, setAiResult] = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiStatus, setAiStatus] = useState("idle");
   const [placeName, setPlaceName] = useState("");
   const [vets, setVets] = useState(null);
   const [vetsLoading, setVetsLoading] = useState(false);
@@ -490,7 +497,7 @@ export default function App() {
       setAssessment(result);
       setPlaceName(savedLoc.name);
       setScreen("result");
-      if (isOnline && result) { fetchAI(savedLoc.lat, savedLoc.lng, result); fetchVets(savedLoc.lat, savedLoc.lng); }
+      if (isOnline && result) { fetchVets(savedLoc.lat, savedLoc.lng); }
       else setAiStatus("offline");
       return;
     }
@@ -512,11 +519,9 @@ export default function App() {
           setIsOnline(true);
           var place = await reverseGeocode(lat, lng);
           if (place) setPlaceName(place);
-          fetchAI(lat, lng, result);
           fetchVets(lat, lng);
         } else {
           setIsOnline(false);
-          setAiStatus("offline");
         }
       },
       function() { setLocError("Unable to get location. Please enable location permissions."); setScreen("result"); },
@@ -524,28 +529,7 @@ export default function App() {
     );
   };
 
-  var fetchAI = async function(lat, lng, result) {
-    setAiLoading(true);
-    setAiStatus("online");
-    try {
-      var res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 700,
-          system: "You are an expert on 1080 baiting programs in Australia. Give concise practical safety advice in 2-3 plain text paragraphs. No markdown.",
-          messages: [{ role: "user", content: "User at lat " + lat.toFixed(3) + " lng " + lng.toFixed(3) + " Australia. Region: " + result.region + " Risk: " + result.risk + ". Context: " + result.notes + ". Explain in under 160 words: why this risk level, what 1080 is used for here, most important safety action. Plain text only." }]
-        })
-      });
-      if (!res.ok) throw new Error();
-      var data = await res.json();
-      var block = data.content && data.content.find(function(b) { return b.type === "text"; });
-      setAiResult(block ? block.text : null);
-      if (!block || !block.text) setAiStatus("error");
-    } catch { setAiResult(null); setAiStatus("error"); }
-    setAiLoading(false);
-  };
+;
 
   var fetchVets = async function(lat, lng) {
     setVetsLoading(true);
@@ -1010,19 +994,6 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* AI */}
-                  <div style={{ ...card, borderLeft: "3px solid " + (aiResult ? "#3498db" : border) }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                      <div style={lbl}>AI Risk Analysis</div>
-                      {aiStatus === "online" && aiResult && <span style={{ fontSize: 9, color: "#27ae60", background: "#e8f8ee", padding: "2px 7px", borderRadius: 10, fontWeight: "600" }}>LIVE</span>}
-                      {aiStatus === "offline" && <span style={{ fontSize: 9, color: "#e67e22", background: "#fef3e2", padding: "2px 7px", borderRadius: 10, fontWeight: "600" }}>OFFLINE</span>}
-                    </div>
-                    {aiLoading && <div style={{ display: "flex", alignItems: "center", gap: 10, color: textLight, fontSize: 13 }}><div className="spin" style={{ width: 13, height: 13, border: "2px solid #eee", borderTop: "2px solid #3498db", borderRadius: "50%", flexShrink: 0 }} />Analysing your location...</div>}
-                    {!aiLoading && aiResult && <div style={{ fontSize: 14, color: textSub, lineHeight: 1.8 }}>{aiResult}</div>}
-                    {!aiLoading && aiStatus === "offline" && <div style={{ fontSize: 13, color: textLight }}>No connection. Built-in risk data above is still accurate.</div>}
-                    {!aiLoading && aiStatus === "error" && <div style={{ fontSize: 13, color: textLight }}>Could not load. <button onClick={function() { fetchAI(location.lat, location.lng, assessment); }} style={{ background: "none", border: "none", color: accent, cursor: "pointer", fontFamily: "system-ui", fontSize: 13 }}>Retry</button></div>}
-                  </div>
-
                   {/* Nearest vets */}
                   <div style={{ ...card, borderLeft: "3px solid " + accent }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -1064,10 +1035,10 @@ export default function App() {
                     })}
                     {!vetsLoading && !vets && (
                       <div>
-                        <div style={{ fontSize: 13, color: textLight, marginBottom: 8 }}>{isOnline ? "Could not load vet data." : "Vet lookup requires internet."}</div>
-                        <a href="https://www.google.com/maps/search/emergency+vet+near+me" target="_blank" rel="noreferrer"
-                          style={{ display: "block", background: accent, color: "white", padding: "11px", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: "800", textAlign: "center" }}>
-                          Search Google Maps for Vets
+                        <div style={{ fontSize: 13, color: textLight, marginBottom: 8 }}>{isOnline ? "Could not load vet data automatically." : "Vet lookup requires internet."}</div>
+                        <a href={"https://www.google.com/maps/search/emergency+vet/@" + (location ? location.lat + "," + location.lng : "-25.5,133.5") + ",10z"} target="_blank" rel="noreferrer"
+                          style={{ display: "block", background: accent, color: "white", padding: "12px", borderRadius: 8, textDecoration: "none", fontSize: 14, fontWeight: "800", textAlign: "center" }}>
+                          Find Nearest Vet on Google Maps
                         </a>
                       </div>
                     )}
